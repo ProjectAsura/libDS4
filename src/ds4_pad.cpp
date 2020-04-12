@@ -34,7 +34,6 @@ static const uint16_t kDualShock4_CUH_ZCT2x     = 0x09cc;  // CUH-ZCT2x
 // Global Variables.
 //-----------------------------------------------------------------------------
 static GUID                     gHidGuid        = {};
-static HDEVINFO                 gDeviceInfo     = nullptr;
 static std::atomic<bool>        gIsInit         = false;
 
 } // namespace
@@ -51,15 +50,6 @@ struct PadHandle
     PAD_CONNECTION_TYPE     type;
 };
 
-///////////////////////////////////////////////////////////////////////////////
-// PadRawInput structure
-///////////////////////////////////////////////////////////////////////////////
-struct PadRawInput
-{
-    PAD_CONNECTION_TYPE     type;
-    uint8_t                 bytes[78];
-};
-
 //-----------------------------------------------------------------------------
 //      初期化処理を行います.
 //-----------------------------------------------------------------------------
@@ -69,10 +59,6 @@ bool PadInit()
     { return true; }
 
     HidD_GetHidGuid(&gHidGuid);
-
-    gDeviceInfo = SetupDiGetClassDevs(&gHidGuid, NULL, NULL, DIGCF_PRESENT | DIGCF_INTERFACEDEVICE);
-    if (gDeviceInfo == nullptr)
-    { return false; }
 
     gIsInit = true;
 
@@ -98,11 +84,16 @@ bool PadOpen(PadHandle** ppHandle)
     if (!gIsInit)
     { return false; }
 
+    auto info = SetupDiGetClassDevs(&gHidGuid, NULL, NULL, DIGCF_PRESENT | DIGCF_INTERFACEDEVICE);
+    if (info == nullptr)
+    { return false; }
+
     SP_DEVICE_INTERFACE_DATA devInfoData;
     devInfoData.cbSize = sizeof(devInfoData);
 
-    ULONG length = 0;
-    auto  index  = 0u;
+    ULONG length    = 0;
+    ULONG required  = 0;
+    auto  index     = 0u;
     auto  deviceDetected = false;
 
     PAD_CONNECTION_TYPE type;
@@ -112,21 +103,25 @@ bool PadOpen(PadHandle** ppHandle)
 
     for(; deviceDetected == false; index++)
     {
-        auto ret = SetupDiEnumDeviceInterfaces(gDeviceInfo, 0, &gHidGuid, index, &devInfoData);
+        auto ret = SetupDiEnumDeviceInterfaces(info, 0, &gHidGuid, index, &devInfoData);
         if (ret == FALSE)
         { return false; }
 
-        ret = SetupDiGetDeviceInterfaceDetail(gDeviceInfo, &devInfoData, NULL, 0, &length, NULL);
-        if (ret == FALSE)
-        { return false; }
+        // サイズ取得.
+        SetupDiGetDeviceInterfaceDetail(info, &devInfoData, NULL, 0, &length, NULL);
 
         auto detailData = static_cast<PSP_DEVICE_INTERFACE_DETAIL_DATA>(malloc(length));
         if (detailData == nullptr)
-        { return false; }
+        {
+            auto errcode = GetLastError();
+            return false;
+        }
+        detailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
 
-        ret = SetupDiGetDeviceInterfaceDetail(gDeviceInfo, &devInfoData, detailData, length, NULL, NULL);
+        ret = SetupDiGetDeviceInterfaceDetail(info, &devInfoData, detailData, length, &required, NULL);
         if (ret == FALSE)
         {
+            auto errcode = GetLastError();
             free(detailData);
             detailData = nullptr;
             return false;
@@ -231,11 +226,14 @@ bool PadOpen(PadHandle** ppHandle)
         detailData = nullptr;
     }
 
-    // 設定.
-    (*ppHandle)->handle     = handle;
-    (*ppHandle)->devicePath = devicePath;
-    (*ppHandle)->size       = size;
-    (*ppHandle)->type       = type;
+    // ハンドル生成.
+    auto pad = new PadHandle;
+    pad->handle     = handle;
+    pad->devicePath = devicePath;
+    pad->size       = size;
+    pad->type       = type;
+
+    *ppHandle = pad;
 
     return true;
 }
@@ -250,7 +248,7 @@ bool PadClose(PadHandle*& pHandle)
 
     if (pHandle->type == PAD_CONNECTION_BT)
     {
-        // Bluetooth切断処理.
+        // TODO: Bluetooth切断処理.
     }
 
     if (pHandle->handle != nullptr)
@@ -259,9 +257,8 @@ bool PadClose(PadHandle*& pHandle)
         pHandle->handle = nullptr;
     }
 
-    pHandle->devicePath.clear();
-    pHandle->size = 0;
-    pHandle->type = PAD_CONNECTION_NONE;
+    // ハンドル破棄.
+    delete pHandle;
     pHandle = nullptr;
 
     return true;
@@ -270,18 +267,18 @@ bool PadClose(PadHandle*& pHandle)
 //-----------------------------------------------------------------------------
 //      パッド生データを読み取ります.
 //-----------------------------------------------------------------------------
-bool PadRead(PadHandle* pHandle, PadRawInput** ppResult)
+bool PadRead(PadHandle* pHandle, PadRawInput* pResult)
 {
-    if (pHandle == nullptr || ppResult == nullptr)
+    if (pHandle == nullptr || pResult == nullptr)
     { return false; }
 
     if (pHandle->handle == nullptr)
     { return false; }
 
-    auto ret = ReadFile(pHandle, (*ppResult)->bytes, pHandle->size, nullptr, nullptr);
-    (*ppResult)->type = pHandle->type;
+    auto ret = ReadFile(pHandle->handle, pResult->bytes, pHandle->size, nullptr, nullptr);
+    pResult->type = pHandle->type;
 
-    return (ret == FALSE) ? false : true;
+    return (ret == TRUE);
 }
 
 //-----------------------------------------------------------------------------
@@ -296,7 +293,7 @@ bool PadMap(const PadRawInput* pRawData, PadState& state)
 
     if (pRawData->type == PAD_CONNECTION_NONE)
     { 
-        state.type = PAD_CONNECTION_NONE;
+        memset(&state, 0, sizeof(state));
     }
     else if (pRawData->type == PAD_CONNECTION_USB)
     {
@@ -315,10 +312,11 @@ bool PadMap(const PadRawInput* pRawData, PadState& state)
         input = &pRawData->bytes[2];
     }
 
-    state.stickL.x = input[0];
-    state.stickL.y = input[1];
-    state.stickR.x = input[2];
-    state.stickR.y = input[3];
+
+    state.stickL.x = input[1];
+    state.stickL.y = input[2];
+    state.stickR.x = input[3];
+    state.stickR.y = input[4];
     state.analogButtons.l2 = input[8];
     state.analogButtons.r2 = input[9];
 
@@ -421,11 +419,11 @@ bool PadMap(const PadRawInput* pRawData, PadState& state)
 //-----------------------------------------------------------------------------
 bool PadGetState(PadHandle* pHandle, PadState& state)
 {
-    PadRawInput* pResult;
+    PadRawInput pResult;
     if (!PadRead(pHandle, &pResult))
     { return false; }
 
-    if (!PadMap(pResult, state))
+    if (!PadMap(&pResult, state))
     { return false; }
 
     return true;

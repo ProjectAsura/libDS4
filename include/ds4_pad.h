@@ -137,9 +137,10 @@ struct PadTouch
 ///////////////////////////////////////////////////////////////////////////////
 struct PadTouchData
 {
-    uint8_t     touchCount;                 //!< タッチ数.
+    uint8_t     count;                      //!< タッチ数.
     PadTouch    touch[kPadMaxTouchCount];   //!< タッチデータ.
 };
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // PadState structure
@@ -155,6 +156,15 @@ struct PadState
     //PadVector3              acceleration;       //!< 加速度.
     //PadVector3              angularVelocity;    //!< 角速度.
     //PadTouchData            touchData;          //!< タッチパッドデータ.
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// PadRawInput structure
+///////////////////////////////////////////////////////////////////////////////
+struct PadRawInput
+{
+    PAD_CONNECTION_TYPE     type;
+    uint8_t                 bytes[78];
 };
 
 //-----------------------------------------------------------------------------
@@ -193,11 +203,11 @@ bool PadClose(PadHandle*& pHandle);
 //! @brief      パッド生データを読み取ります.
 //!
 //! @param[in]      pHandle     パッドハンドル.
-//! @param[out]     ppResult    パッド生データの格納先.
+//! @param[out]     pResult     パッド生データの格納先.
 //! @retval true    読み取りに成功.
 //! @retval false   読み取りに失敗.
 //-----------------------------------------------------------------------------
-bool PadRead(PadHandle* handle, PadRawInput** ppResult);
+bool PadRead(PadHandle* handle, PadRawInput* pResult);
 
 //-----------------------------------------------------------------------------
 //! @brief      パッド生データを扱いやすい形にマッピングします.

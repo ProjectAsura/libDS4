@@ -13,6 +13,7 @@
 #ifdef LIB_DS4_AUTO_LINK
 #pragma comment(lib, "hid.lib")
 #pragma comment(lib, "setupapi.lib")
+#pragma comment(lib, "Bthprops.lib")
 #endif//LIB_DS4_AUTO_LINK
 
 
@@ -153,9 +154,9 @@ struct PadState
     uint32_t                buttons;            //!< ボタン.
     PadAnalogButtons        analogButtons;      //!< アナログボタン.
     //PadQuaternion           orientation;        //!< 向き.
-    //PadVector3              acceleration;       //!< 加速度.
-    //PadVector3              angularVelocity;    //!< 角速度.
-    //PadTouchData            touchData;          //!< タッチパッドデータ.
+    PadVector3              acceleration;       //!< 加速度.
+    PadVector3              angularVelocity;    //!< 角速度.
+    PadTouchData            touchData;          //!< タッチパッドデータ.
 };
 
 ///////////////////////////////////////////////////////////////////////////////

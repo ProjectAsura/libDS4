@@ -14,6 +14,8 @@
 #include <Windows.h>
 #include <hidsdi.h>
 #include <SetupAPI.h>
+#include <Bthsdpdef.h>
+#include <BluetoothAPIs.h>
 
 
 namespace {
@@ -29,6 +31,12 @@ static const uint16_t kDualShockWirelessAdaptor = 0x0ba0;
 static const uint16_t kDualShock4_CUH_ZCT1x     = 0x05c4;  // CUH-ZCT1x
 static const uint16_t kDualShock4_CUH_ZCT2x     = 0x09cc;  // CUH-ZCT2x
 
+// For Bluetooth.
+static const char  kBlankSerial[] = "00:00:00:00:00:00";
+static const int   IOCTL_BTH_DISCONNECT_DEVICE = 0x41000c;
+
+static const float kAccelResPerG = 8192.0f;
+static const float kGyroResInDegSec = 16.0f;
 
 //-----------------------------------------------------------------------------
 // Global Variables.
@@ -48,6 +56,7 @@ struct PadHandle
     std::wstring            devicePath;
     uint32_t                size;
     PAD_CONNECTION_TYPE     type;
+    std::string             macAddress;
 };
 
 //-----------------------------------------------------------------------------
@@ -100,6 +109,7 @@ bool PadOpen(PadHandle** ppHandle)
     DWORD               size = 0;
     HANDLE              handle = nullptr;
     std::wstring        devicePath;
+    std::string         macAddress;
 
     for(; deviceDetected == false; index++)
     {
@@ -193,9 +203,22 @@ bool PadOpen(PadHandle** ppHandle)
             HidP_GetCaps(preparsedData, &capabilities);
 
             if (capabilities.InputReportByteLength == 64)
-            { type = PAD_CONNECTION_USB; }
+            {
+                type = PAD_CONNECTION_USB;
+
+                char buf[16];
+                buf[0] = 18;
+                if (HidD_GetFeature(handle, buf, 16) == TRUE)
+                { macAddress = buf; }
+            }
             else
-            { type = PAD_CONNECTION_BT; }
+            {
+                type = PAD_CONNECTION_BT;
+
+                char buf[126];
+                if (HidD_GetSerialNumberString(handle, buf, 126) == TRUE)
+                { macAddress = buf; }
+            }
 
             size = capabilities.FeatureReportByteLength;
 
@@ -212,9 +235,22 @@ bool PadOpen(PadHandle** ppHandle)
             HidP_GetCaps(preparsedData, &capabilities);
 
             if (capabilities.InputReportByteLength == 64)
-            { type = PAD_CONNECTION_USB; }
+            {
+                type = PAD_CONNECTION_USB;
+
+                char buf[16];
+                buf[0] = 18;
+                if (HidD_GetFeature(handle, buf, 16) == TRUE)
+                { macAddress = buf; }
+            }
             else
-            { type = PAD_CONNECTION_BT; }
+            {
+                type = PAD_CONNECTION_BT;
+
+                char buf[126];
+                if (HidD_GetSerialNumberString(handle, buf, 126) == TRUE)
+                { macAddress = buf; }
+            }
 
             size = capabilities.FeatureReportByteLength;
             HidD_FreePreparsedData(preparsedData);
@@ -232,6 +268,7 @@ bool PadOpen(PadHandle** ppHandle)
     pad->devicePath = devicePath;
     pad->size       = size;
     pad->type       = type;
+    pad->macAddress = macAddress;
 
     *ppHandle = pad;
 
@@ -249,10 +286,39 @@ bool PadClose(PadHandle*& pHandle)
     if (pHandle->type == PAD_CONNECTION_BT)
     {
         // TODO: BluetoothØ’fˆ—.
+#if 0
+        //BLUETOOTH_FIND_RADIO_PARAMS params;
+        //params.dwSize = sizeof(BLUETOOTH_FIND_RADIO_PARAMS);
+
+        //HANDLE handleBT = nullptr;
+        //auto handleSearch = BluetoothFindFirstRadio(&params, &handleBT);
+
+        //uint8_t btAddress[8];
+        //DWORD length = 0;
+        //BOOL ret = FALSE;
+        //while(!ret && handleBT != nullptr)
+        //{
+        //    ret = DeviceIoControl(handleBT, IOCTL_BTH_DISCONNECT_DEVICE, btAddress, 8, NULL, 0, &length, NULL);
+        //    CloseHandle(handleBT);
+        //    if (!ret)
+        //    {
+        //        if (!BluetoothFindNextRadio(handleSearch, &handleBT))
+        //        { handleBT = nullptr; }
+        //    }
+        //}
+
+        //BluetoothFindRadioClose(handleSearch);
+#endif
     }
 
     if (pHandle->handle != nullptr)
     {
+        PadColor color = {};
+        PadVibrationParam vibrate = {};
+
+        PadSetLightBarColor(pHandle, &color);
+        PadSetVibration(pHandle, &vibrate);
+
         CloseHandle(pHandle->handle);
         pHandle->handle = nullptr;
     }
@@ -410,6 +476,38 @@ bool PadMap(const PadRawInput* pRawData, PadState& state)
     { mask |= PAD_BUTTON_TOUCH_PAD; }
 
     state.buttons = mask;
+
+    auto touch_count = 0;
+    if ((input[35] & 0x80) == 0)
+    { touch_count++; }
+
+    if ((input[39] & 0x80) == 0)
+    { touch_count++; }
+
+    auto gyroX  = int16_t((input[13] << 8) | input[14]);
+    auto gyroY  = int16_t((input[15] << 8) | input[16]);
+    auto gyroZ  = int16_t((input[17] << 8) | input[18]);
+
+    auto accelX = int16_t((input[19] << 8) | input[20]);
+    auto accelY = int16_t((input[21] << 8) | input[22]);
+    auto accelZ = int16_t((input[23] << 8) | input[24]);
+
+    state.angularVelocity.x = -gyroX / kGyroResInDegSec;
+    state.angularVelocity.y =  gyroY / kGyroResInDegSec;
+    state.angularVelocity.z = -gyroZ / kGyroResInDegSec;
+
+    state.acceleration.x = -accelX / kAccelResPerG;
+    state.acceleration.y = -accelY / kAccelResPerG;
+    state.acceleration.z =  accelZ / kAccelResPerG;
+
+    state.touchData.count = touch_count;
+    state.touchData.touch[0].id = (input[35] & 0x7f);
+    state.touchData.touch[0].x = static_cast<uint16_t>((uint16_t(input[37] & 0xf) << 8) | input[36]);
+    state.touchData.touch[0].y = static_cast<uint16_t>((uint16_t(input[38] << 4)) | ((input[37] & 0xf0) >> 4));
+
+    state.touchData.touch[1].id = (input[39] & 0x7f);
+    state.touchData.touch[1].x = static_cast<uint16_t>((uint16_t(input[41] & 0xf) << 8) | input[40]);
+    state.touchData.touch[1].y = static_cast<uint16_t>((uint16_t(input[42] << 4)) | ((input[41] & 0xf0) >> 4));
 
     return true;
 }

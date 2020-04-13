@@ -1,4 +1,6 @@
+#ifndef LIB_DS4_AUTO_LINK
 #define LIB_DS4_AUTO_LINK
+#endif//LIB_DS4_AUTO_LINK
 
 #include <ds4_pad.h>
 #include <cstdio>

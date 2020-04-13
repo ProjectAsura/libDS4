@@ -239,6 +239,16 @@ bool PadGetState(PadHandle* pHandle, PadState& state);
 //-----------------------------------------------------------------------------
 bool PadSetVibration(PadHandle* handle, const PadVibrationParam* pParam);
 
+//-----------------------------------------------------------------------------
+//! @brief      ライトバーカラーを設定します.
+//!
+//! @param[in]      handle      パッドハンドル.
+//! @param[in]      pParam      ライトバーカラー.
+//! @retval true    設定に成功.
+//! @retval fasle   設定に失敗.
+//-----------------------------------------------------------------------------
+bool PadSetLightBarColor(PadHandle* handle, const PadColor* pParam);
+
 
 
 

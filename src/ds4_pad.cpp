@@ -440,7 +440,7 @@ bool PadSetVibration(PadHandle* pHandle, const PadVibrationParam* pParam)
     if (pHandle->handle == nullptr)
     { return false; }
 
-    uint8_t bytes[78] = {};
+    uint8_t bytes[32] = {};
     if (pHandle->type == PAD_CONNECTION_BT)
     {
         bytes[0] = 0x11;
@@ -455,6 +455,43 @@ bool PadSetVibration(PadHandle* pHandle, const PadVibrationParam* pParam)
         bytes[1] = 0xf1;    // enable rumble (0x01), lightbar (0x02), flash (0x04)
         bytes[4] = pParam->largeMotor;
         bytes[5] = pParam->smallMotor;
+    }
+
+    auto size = WriteFile(pHandle->handle, bytes, 32, nullptr, nullptr);
+    if (size != 32)
+    { return false; }
+
+    return true;
+}
+
+//-----------------------------------------------------------------------------
+//      ライトバーカラーを設定します.
+//-----------------------------------------------------------------------------
+bool PadSetLightBarColor(PadHandle* pHandle, const PadColor* pParam)
+{
+    if (pHandle == nullptr || pParam == nullptr)
+    { return false; }
+
+    if (pHandle->handle == nullptr)
+    { return false; }
+
+    uint8_t bytes[32] = {};
+    if (pHandle->type == PAD_CONNECTION_BT)
+    {
+        bytes[0]  = 0x11;
+        bytes[1]  = 0xb0;
+        bytes[3]  = 0xf6;    // enable rumble (0x01), lightbar (0x02), flash (0x04)
+        bytes[8]  = pParam->r;
+        bytes[9]  = pParam->g;
+        bytes[10] = pParam->b;
+    }
+    else
+    {
+        bytes[0] = 0x05;
+        bytes[1] = 0xf6;    // enable rumble (0x01), lightbar (0x02), flash (0x04)
+        bytes[6] = pParam->r;
+        bytes[7] = pParam->g;
+        bytes[8] = pParam->b;
     }
 
     auto size = WriteFile(pHandle->handle, bytes, 32, nullptr, nullptr);

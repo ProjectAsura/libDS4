@@ -91,6 +91,43 @@ int main(int argc, char** argv)
                 PadSetVibration(pHandle, &param);
             }
 
+            if (state.buttons & PAD_BUTTON_CIRCLE)
+            {
+                PadColor color;
+                color.r = 255;
+                color.g = 0;
+                color.b = 0;
+
+                PadSetLightBarColor(pHandle, &color);
+            }
+
+            if (state.buttons & PAD_BUTTON_TRIANGLE)
+            {
+                PadColor color;
+                color.r = 0;
+                color.g = 255;
+                color.b = 0;
+                PadSetLightBarColor(pHandle, &color);
+            }
+
+            if (state.buttons & PAD_BUTTON_CROSS)
+            {
+                PadColor color;
+                color.r = 0;
+                color.g = 0;
+                color.b = 255;
+                PadSetLightBarColor(pHandle, &color);
+            }
+
+            if (state.buttons & PAD_BUTTON_SQUARE)
+            {
+                PadColor color;
+                color.r = 255;
+                color.g = 125;
+                color.b = 125;
+                PadSetLightBarColor(pHandle, &color);
+            }
+
 
             // EscÇ≈èIóπ.
             if (GetAsyncKeyState(VK_ESCAPE) & VK_ESCAPE)

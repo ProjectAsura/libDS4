@@ -35,7 +35,7 @@ static const uint16_t kDualShock4_CUH_ZCT2x     = 0x09cc;  // CUH-ZCT2x
 static const char  kBlankSerial[] = "00:00:00:00:00:00";
 static const int   IOCTL_BTH_DISCONNECT_DEVICE = 0x41000c;
 
-static const float kAccelResPerG = 8192.0f;
+static const float kAccelResPerG    = 8192.0f;
 static const float kGyroResInDegSec = 16.0f;
 
 //-----------------------------------------------------------------------------
@@ -52,11 +52,11 @@ static std::atomic<bool>        gIsInit         = false;
 ///////////////////////////////////////////////////////////////////////////////
 struct PadHandle
 {
-    HANDLE                  handle;
-    std::wstring            devicePath;
-    uint32_t                size;
-    PAD_CONNECTION_TYPE     type;
-    std::string             macAddress;
+    HANDLE                  Handle;
+    std::wstring            DevicePath;
+    uint32_t                Size;
+    PAD_CONNECTION_TYPE     Type;
+    std::string             MacAddress;
 };
 
 //-----------------------------------------------------------------------------
@@ -264,11 +264,11 @@ bool PadOpen(PadHandle** ppHandle)
 
     // ƒnƒ“ƒhƒ‹¶¬.
     auto pad = new PadHandle;
-    pad->handle     = handle;
-    pad->devicePath = devicePath;
-    pad->size       = size;
-    pad->type       = type;
-    pad->macAddress = macAddress;
+    pad->Handle     = handle;
+    pad->DevicePath = devicePath;
+    pad->Size       = size;
+    pad->Type       = type;
+    pad->MacAddress = macAddress;
 
     *ppHandle = pad;
 
@@ -283,7 +283,7 @@ bool PadClose(PadHandle*& pHandle)
     if (pHandle == nullptr)
     { return false; }
 
-    if (pHandle->type == PAD_CONNECTION_BT)
+    if (pHandle->Type == PAD_CONNECTION_BT)
     {
         // TODO: BluetoothØ’fˆ—.
 #if 0
@@ -311,7 +311,7 @@ bool PadClose(PadHandle*& pHandle)
 #endif
     }
 
-    if (pHandle->handle != nullptr)
+    if (pHandle->Handle != nullptr)
     {
         PadColor color = {};
         PadVibrationParam vibrate = {};
@@ -319,8 +319,8 @@ bool PadClose(PadHandle*& pHandle)
         PadSetLightBarColor(pHandle, &color);
         PadSetVibration(pHandle, &vibrate);
 
-        CloseHandle(pHandle->handle);
-        pHandle->handle = nullptr;
+        CloseHandle(pHandle->Handle);
+        pHandle->Handle = nullptr;
     }
 
     // ƒnƒ“ƒhƒ‹”jŠü.
@@ -338,11 +338,11 @@ bool PadRead(PadHandle* pHandle, PadRawInput* pResult)
     if (pHandle == nullptr || pResult == nullptr)
     { return false; }
 
-    if (pHandle->handle == nullptr)
+    if (pHandle->Handle == nullptr)
     { return false; }
 
-    auto ret = ReadFile(pHandle->handle, pResult->bytes, pHandle->size, nullptr, nullptr);
-    pResult->type = pHandle->type;
+    auto ret = ReadFile(pHandle->Handle, pResult->Bytes, pHandle->Size, nullptr, nullptr);
+    pResult->Type = pHandle->Type;
 
     return (ret == TRUE);
 }
@@ -355,128 +355,39 @@ bool PadMap(const PadRawInput* pRawData, PadState& state)
     if (pRawData == nullptr)
     { return false; }
 
-    const uint8_t* input = &pRawData->bytes[0];
+    const uint8_t* input = &pRawData->Bytes[0];
 
-    if (pRawData->type == PAD_CONNECTION_NONE)
+    if (pRawData->Type == PAD_CONNECTION_NONE)
     { 
         memset(&state, 0, sizeof(state));
     }
-    else if (pRawData->type == PAD_CONNECTION_USB)
+    else if (pRawData->Type == PAD_CONNECTION_USB)
     {
         // 64 bytes.
-        state.type = PAD_CONNECTION_USB;
+        state.Type = PAD_CONNECTION_USB;
     }
-    else if (pRawData->type == PAD_CONNECTION_WIRELESS)
+    else if (pRawData->Type == PAD_CONNECTION_WIRELESS)
     {
         // 64 bytes.
-        state.type = PAD_CONNECTION_WIRELESS;
+        state.Type = PAD_CONNECTION_WIRELESS;
     }
-    else if (pRawData->type == PAD_CONNECTION_BT)
+    else if (pRawData->Type == PAD_CONNECTION_BT)
     {
         // 78 bytes.
-        state.type = PAD_CONNECTION_BT;
-        input = &pRawData->bytes[2];
+        state.Type = PAD_CONNECTION_BT;
+        input = &pRawData->Bytes[2];
     }
 
+    state.StickL.X          = input[1];
+    state.StickL.Y          = input[2];
+    state.StickR.X          = input[3];
+    state.StickR.Y          = input[4];
+    state.AnalogButtons.L2  = input[8];
+    state.AnalogButtons.R2  = input[9];
+    state.Buttons           = uint16_t(input[5] | (input[6] << 8));
+    state.SpecialButtons    = input[7] & 0x3;
 
-    state.stickL.x = input[1];
-    state.stickL.y = input[2];
-    state.stickR.x = input[3];
-    state.stickR.y = input[4];
-    state.analogButtons.l2 = input[8];
-    state.analogButtons.r2 = input[9];
-
-    uint32_t mask = 0;
-
-    auto dpad = input[5] & 0x0f;
-    switch(dpad)
-    {
-    case 0:
-        {
-            mask |= PAD_BUTTON_UP;
-        }
-        break;
-
-    case 1:
-        {
-            mask |= PAD_BUTTON_UP;
-            mask |= PAD_BUTTON_RIGHT;
-        }
-        break;
-
-    case 2:
-        {
-            mask |= PAD_BUTTON_RIGHT;
-        }
-        break;
-
-    case 3:
-        {
-            mask |= PAD_BUTTON_DOWN;
-            mask |= PAD_BUTTON_RIGHT;
-        }
-        break;
-
-    case 4:
-        {
-            mask |= PAD_BUTTON_DOWN;
-        }
-        break;
-
-    case 5:
-        {
-            mask |= PAD_BUTTON_DOWN;
-            mask |= PAD_BUTTON_LEFT;
-        }
-        break;
-
-    case 6:
-        {
-            mask |= PAD_BUTTON_LEFT;
-        }
-        break;
-
-    case 7:
-        {
-            mask |= PAD_BUTTON_UP;
-            mask |= PAD_BUTTON_LEFT;
-        }
-        break;
-    }
-
-    if (input[5] & (1 << 4))
-    { mask |= PAD_BUTTON_SQUARE; }
-    if (input[5] & (1 << 5))
-    { mask |= PAD_BUTTON_CROSS; }
-    if (input[5] & (1 << 6))
-    { mask |= PAD_BUTTON_CIRCLE; }
-    if (input[5] & (1 << 7))
-    { mask |= PAD_BUTTON_TRIANGLE; }
-
-    if (input[6] & (1 << 0))
-    { mask |= PAD_BUTTON_L1; }
-    if (input[6] & (1 << 1))
-    { mask |= PAD_BUTTON_R1; }
-    if (input[6] & (1 << 2))
-    { mask |= PAD_BUTTON_L2; }
-    if (input[6] & (1 << 3))
-    { mask |= PAD_BUTTON_R2; }
-    //if (input[6] & (1 << 4))
-    //{ mask |= PAD_BUTTON_SHARE; }
-    if (input[6] & (1 << 5))
-    { mask |= PAD_BUTTON_OPTIONS; }
-    if (input[6] & (1 << 6))
-    { mask |= PAD_BUTTON_L3; }
-    if (input[6] & (1 << 7))
-    { mask |= PAD_BUTTON_R3; }
-
-    if (input[7] & (1 << 0))
-    { mask |= PAD_BUTTON_PS; }
-    if (input[7] & (1 << 1))
-    { mask |= PAD_BUTTON_TOUCH_PAD; }
-
-    state.buttons = mask;
-
+#if 0
     auto touch_count = 0;
     if ((input[35] & 0x80) == 0)
     { touch_count++; }
@@ -492,22 +403,23 @@ bool PadMap(const PadRawInput* pRawData, PadState& state)
     auto accelY = int16_t((input[21] << 8) | input[22]);
     auto accelZ = int16_t((input[23] << 8) | input[24]);
 
-    state.angularVelocity.x = -gyroX / kGyroResInDegSec;
-    state.angularVelocity.y =  gyroY / kGyroResInDegSec;
-    state.angularVelocity.z = -gyroZ / kGyroResInDegSec;
+    state.AngularVelocity.X = -gyroX / kGyroResInDegSec;
+    state.AngularVelocity.Y =  gyroY / kGyroResInDegSec;
+    state.AngularVelocity.Z = -gyroZ / kGyroResInDegSec;
 
-    state.acceleration.x = -accelX / kAccelResPerG;
-    state.acceleration.y = -accelY / kAccelResPerG;
-    state.acceleration.z =  accelZ / kAccelResPerG;
+    state.Acceleration.X = -accelX / kAccelResPerG;
+    state.Acceleration.Y = -accelY / kAccelResPerG;
+    state.Acceleration.Z =  accelZ / kAccelResPerG;
 
-    state.touchData.count = touch_count;
-    state.touchData.touch[0].id = (input[35] & 0x7f);
-    state.touchData.touch[0].x = static_cast<uint16_t>((uint16_t(input[37] & 0xf) << 8) | input[36]);
-    state.touchData.touch[0].y = static_cast<uint16_t>((uint16_t(input[38] << 4)) | ((input[37] & 0xf0) >> 4));
+    state.TouchData.Count = touch_count;
+    state.TouchData.Touch[0].id = (input[35] & 0x7f);
+    state.TouchData.Touch[0].x = static_cast<uint16_t>((uint16_t(input[37] & 0xf) << 8) | input[36]);
+    state.TouchData.Touch[0].y = static_cast<uint16_t>((uint16_t(input[38] << 4)) | ((input[37] & 0xf0) >> 4));
 
-    state.touchData.touch[1].id = (input[39] & 0x7f);
-    state.touchData.touch[1].x = static_cast<uint16_t>((uint16_t(input[41] & 0xf) << 8) | input[40]);
-    state.touchData.touch[1].y = static_cast<uint16_t>((uint16_t(input[42] << 4)) | ((input[41] & 0xf0) >> 4));
+    state.TouchData.Touch[1].id = (input[39] & 0x7f);
+    state.TouchData.Touch[1].x = static_cast<uint16_t>((uint16_t(input[41] & 0xf) << 8) | input[40]);
+    state.TouchData.Touch[1].y = static_cast<uint16_t>((uint16_t(input[42] << 4)) | ((input[41] & 0xf0) >> 4));
+#endif
 
     return true;
 }
@@ -535,27 +447,27 @@ bool PadSetVibration(PadHandle* pHandle, const PadVibrationParam* pParam)
     if (pHandle == nullptr || pParam == nullptr)
     { return false; }
 
-    if (pHandle->handle == nullptr)
+    if (pHandle->Handle == nullptr)
     { return false; }
 
     uint8_t bytes[32] = {};
-    if (pHandle->type == PAD_CONNECTION_BT)
+    if (pHandle->Type == PAD_CONNECTION_BT)
     {
         bytes[0] = 0x11;
         bytes[1] = 0xb0;
         bytes[3] = 0xf1;    // enable rumble (0x01), lightbar (0x02), flash (0x04)
-        bytes[6] = pParam->largeMotor;
-        bytes[7] = pParam->smallMotor;
+        bytes[6] = pParam->LargeMotor;
+        bytes[7] = pParam->SmallMotor;
     }
     else
     {
         bytes[0] = 0x05;
         bytes[1] = 0xf1;    // enable rumble (0x01), lightbar (0x02), flash (0x04)
-        bytes[4] = pParam->largeMotor;
-        bytes[5] = pParam->smallMotor;
+        bytes[4] = pParam->LargeMotor;
+        bytes[5] = pParam->SmallMotor;
     }
 
-    auto size = WriteFile(pHandle->handle, bytes, 32, nullptr, nullptr);
+    auto size = WriteFile(pHandle->Handle, bytes, 32, nullptr, nullptr);
     if (size != 32)
     { return false; }
 
@@ -570,29 +482,29 @@ bool PadSetLightBarColor(PadHandle* pHandle, const PadColor* pParam)
     if (pHandle == nullptr || pParam == nullptr)
     { return false; }
 
-    if (pHandle->handle == nullptr)
+    if (pHandle->Handle == nullptr)
     { return false; }
 
     uint8_t bytes[32] = {};
-    if (pHandle->type == PAD_CONNECTION_BT)
+    if (pHandle->Type == PAD_CONNECTION_BT)
     {
         bytes[0]  = 0x11;
         bytes[1]  = 0xb0;
         bytes[3]  = 0xf6;    // enable rumble (0x01), lightbar (0x02), flash (0x04)
-        bytes[8]  = pParam->r;
-        bytes[9]  = pParam->g;
-        bytes[10] = pParam->b;
+        bytes[8]  = pParam->R;
+        bytes[9]  = pParam->G;
+        bytes[10] = pParam->B;
     }
     else
     {
         bytes[0] = 0x05;
         bytes[1] = 0xf6;    // enable rumble (0x01), lightbar (0x02), flash (0x04)
-        bytes[6] = pParam->r;
-        bytes[7] = pParam->g;
-        bytes[8] = pParam->b;
+        bytes[6] = pParam->R;
+        bytes[7] = pParam->G;
+        bytes[8] = pParam->B;
     }
 
-    auto size = WriteFile(pHandle->handle, bytes, 32, nullptr, nullptr);
+    auto size = WriteFile(pHandle->Handle, bytes, 32, nullptr, nullptr);
     if (size != 32)
     { return false; }
 

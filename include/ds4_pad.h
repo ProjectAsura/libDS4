@@ -46,23 +46,43 @@ enum PAD_CONNECTION_TYPE
 ///////////////////////////////////////////////////////////////////////////////
 enum PAD_BUTTON_OFFSET
 {
-    PAD_BUTTON_L3        = 0x00000002,
-    PAD_BUTTON_R3        = 0x00000004,
-    PAD_BUTTON_OPTIONS   = 0x00000008,
-    PAD_BUTTON_UP        = 0x00000010,
-    PAD_BUTTON_RIGHT     = 0x00000020,
-    PAD_BUTTON_DOWN      = 0x00000040,
-    PAD_BUTTON_LEFT      = 0x00000080,
-    PAD_BUTTON_L2        = 0x00000100,
-    PAD_BUTTON_R2        = 0x00000200,
-    PAD_BUTTON_L1        = 0x00000400,
-    PAD_BUTTON_R1        = 0x00000800,
-    PAD_BUTTON_TRIANGLE  = 0x00001000,
-    PAD_BUTTON_CIRCLE    = 0x00002000,
-    PAD_BUTTON_CROSS     = 0x00004000,
-    PAD_BUTTON_SQUARE    = 0x00008000,
-    PAD_BUTTON_TOUCH_PAD = 0x00100000,
-    PAD_BUTTON_PS        = 0x80000000,
+    PAD_BUTTON_R3           = 1 << 15,
+    PAD_BUTTON_L3           = 1 << 14,
+    PAD_BUTTON_OPTIONS      = 1 << 13,
+    PAD_BUTTON_SHARE        = 1 << 12,
+    PAD_BUTTON_R2           = 1 << 11,
+    PAD_BUTTON_L2           = 1 << 10,
+    PAD_BUTTON_R1           = 1 << 9,
+    PAD_BUTTON_L1           = 1 << 8,
+    PAD_BUTTON_TRIANGLE     = 1 << 7,
+    PAD_BUTTON_CIRCLE       = 1 << 6,
+    PAD_BUTTON_CROSS        = 1 << 5,
+    PAD_BUTTON_SQUARE       = 1 << 4
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// PAD_BUTTON_DPAD enum
+///////////////////////////////////////////////////////////////////////////////
+enum PAD_BUTTON_DPAD
+{
+    PAD_BUTTON_DPAD_NONE        = 0x8,
+    PAD_BUTTON_DPAD_NORTHWEST   = 0x7,  // ↑←.
+    PAD_BUTTON_DPAD_WEST        = 0x6,  // ←.
+    PAD_BUTTON_DPAD_SOUTHWEST   = 0x5,  // ↓←.
+    PAD_BUTTON_DPAD_SOUTH       = 0x4,  // ↓
+    PAD_BUTTON_DPAD_SOUTHEAST   = 0x3,  // ↓→
+    PAD_BUTTON_DPAD_EAST        = 0x2,  // →.
+    PAD_BUTTON_DPAD_NORTHEAST   = 0x1,  // ↑→.
+    PAD_BUTTON_DPAD_NORTH       = 0x0   // ↑.
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// PAD_SPECIAL_BUTTON_OFFSET enum
+///////////////////////////////////////////////////////////////////////////////
+enum PAD_SPECIAL_BUTTON_OFFSET
+{
+    PAD_SPECIAL_BUTTON_PS       = 1 << 0,   // PlayStationボタン.
+    PAD_SPECIAL_BUTTON_TPAD     = 1 << 1    // タッチパッド.
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -70,9 +90,9 @@ enum PAD_BUTTON_OFFSET
 ///////////////////////////////////////////////////////////////////////////////]
 struct PadVector3
 {
-    float   x;
-    float   y;
-    float   z;
+    float   X;
+    float   Y;
+    float   Z;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -80,10 +100,10 @@ struct PadVector3
 ///////////////////////////////////////////////////////////////////////////////
 struct PadQuaternion
 {
-    float   x;
-    float   y;
-    float   z;
-    float   w;
+    float   X;
+    float   Y;
+    float   Z;
+    float   W;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -91,8 +111,8 @@ struct PadQuaternion
 ///////////////////////////////////////////////////////////////////////////////
 struct PadAnalogStick
 {
-    uint8_t     x;      //!< X成分(左端が0で，右端が255).
-    uint8_t     y;      //!< Y成分(下端が0で，上端が255).
+    uint8_t     X;      //!< X成分(左端が0で，右端が255).
+    uint8_t     Y;      //!< Y成分(下端が0で，上端が255).
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -100,8 +120,8 @@ struct PadAnalogStick
 ///////////////////////////////////////////////////////////////////////////////
 struct PadAnalogButtons
 {
-    uint8_t     l2;     //!< L2トリガー.
-    uint8_t     r2;     //!< R2トリガー.
+    uint8_t     L2;     //!< L2トリガー.
+    uint8_t     R2;     //!< R2トリガー.
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -109,8 +129,8 @@ struct PadAnalogButtons
 ///////////////////////////////////////////////////////////////////////////////
 struct PadVibrationParam
 {
-    uint8_t     largeMotor; //!< モーター左.
-    uint8_t     smallMotor; //!< モーター右.
+    uint8_t     LargeMotor; //!< モーター左.
+    uint8_t     SmallMotor; //!< モーター右.
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -118,9 +138,9 @@ struct PadVibrationParam
 ///////////////////////////////////////////////////////////////////////////////
 struct PadColor
 {
-    uint8_t     r;      //!< R成分.
-    uint8_t     g;      //!< G成分.
-    uint8_t     b;      //!< B成分.
+    uint8_t     R;      //!< R成分.
+    uint8_t     G;      //!< G成分.
+    uint8_t     B;      //!< B成分.
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -128,9 +148,9 @@ struct PadColor
 ///////////////////////////////////////////////////////////////////////////////
 struct PadTouch
 {
-    uint16_t    x;      //!< X座標.
-    uint16_t    y;      //!< Y座標.
-    uint8_t     id;     //!< 識別番号.
+    uint16_t    X;      //!< X座標.
+    uint16_t    Y;      //!< Y座標.
+    uint8_t     Id;     //!< 識別番号.
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -138,25 +158,27 @@ struct PadTouch
 ///////////////////////////////////////////////////////////////////////////////
 struct PadTouchData
 {
-    uint8_t     count;                      //!< タッチ数.
-    PadTouch    touch[kPadMaxTouchCount];   //!< タッチデータ.
+    uint8_t     Count;                      //!< タッチ数.
+    PadTouch    Touch[kPadMaxTouchCount];   //!< タッチデータ.
 };
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // PadState structure
 ///////////////////////////////////////////////////////////////////////////////
 struct PadState
 {
-    PAD_CONNECTION_TYPE     type;               //!< 接続タイプ.
-    PadAnalogStick          stickL;             //!< 左スティック.
-    PadAnalogStick          stickR;             //!< 右スティック.
-    uint32_t                buttons;            //!< ボタン.
-    PadAnalogButtons        analogButtons;      //!< アナログボタン.
-    //PadQuaternion           orientation;        //!< 向き.
-    PadVector3              acceleration;       //!< 加速度.
-    PadVector3              angularVelocity;    //!< 角速度.
-    PadTouchData            touchData;          //!< タッチパッドデータ.
+    PAD_CONNECTION_TYPE     Type;               //!< 接続タイプ.
+    PadAnalogStick          StickL;             //!< 左スティック.
+    PadAnalogStick          StickR;             //!< 右スティック.
+    uint16_t                Buttons;            //!< ボタン(下位4bitがDPad).
+    uint8_t                 SpecialButtons;     //!< 特殊ボタン.
+    PadAnalogButtons        AnalogButtons;      //!< アナログボタン.
+#if 0
+    //PadQuaternion           Orientation;        //!< 向き.
+    //PadVector3              Acceleration;       //!< 加速度.
+    //PadVector3              AngularVelocity;    //!< 角速度.
+    //PadTouchData            TouchData;          //!< タッチパッドデータ.
+#endif
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -164,8 +186,8 @@ struct PadState
 ///////////////////////////////////////////////////////////////////////////////
 struct PadRawInput
 {
-    PAD_CONNECTION_TYPE     type;
-    uint8_t                 bytes[78];
+    PAD_CONNECTION_TYPE     Type;
+    uint8_t                 Bytes[78];
 };
 
 //-----------------------------------------------------------------------------

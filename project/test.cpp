@@ -21,70 +21,101 @@ int main(int argc, char** argv)
             if (!PadMap(&rawData, state))
             { break; }
 
-            if (state.buttons & PAD_BUTTON_L3)
+            if (state.Buttons & PAD_BUTTON_L3)
             { printf_s("L3 button\n"); }
 
-            if (state.buttons & PAD_BUTTON_R3)
+            if (state.Buttons & PAD_BUTTON_R3)
             { printf_s("R3 button\n"); }
 
-            if (state.buttons & PAD_BUTTON_OPTIONS)
+            if (state.Buttons & PAD_BUTTON_OPTIONS)
             { printf_s("Option button\n"); }
 
-            if (state.buttons & PAD_BUTTON_UP)
-            { printf_s("Å™\n"); }
+            if (state.Buttons & PAD_BUTTON_SHARE)
+            { printf_s("Share button\n"); }
 
-            if (state.buttons & PAD_BUTTON_RIGHT)
-            { printf_s("Å®\n");}
+            auto dpad = state.Buttons & 0xf;
+            switch(dpad)
+            {
+            case PAD_BUTTON_DPAD_NONE:
+                break;
 
-            if (state.buttons & PAD_BUTTON_DOWN)
-            { printf_s("Å´\n"); }
+            case PAD_BUTTON_DPAD_NORTHWEST:
+                printf_s("Å™Å©\n");
+                break;
 
-            if (state.buttons & PAD_BUTTON_LEFT)
-            { printf_s("Å©\n"); }
+            case PAD_BUTTON_DPAD_WEST:
+                printf_s("Å©\n");
+                break;
 
-            if (state.buttons & PAD_BUTTON_L2)
+            case PAD_BUTTON_DPAD_SOUTHWEST:
+                printf_s("Å´Å©\n");
+                break;
+
+            case PAD_BUTTON_DPAD_SOUTH:
+                printf_s("Å´\n");
+                break;
+
+            case PAD_BUTTON_DPAD_SOUTHEAST:
+                printf_s("Å´Å®\n");
+                break;
+
+            case PAD_BUTTON_DPAD_EAST:
+                printf_s("Å®\n");
+                break;
+
+            case PAD_BUTTON_DPAD_NORTHEAST:
+                printf_s("Å™Å®\n");
+                break;
+
+            case PAD_BUTTON_DPAD_NORTH:
+                printf_s("Å™\n");
+                break;
+            }
+
+            if (state.Buttons & PAD_BUTTON_L2)
             { printf_s("L2 button\n"); }
 
-            if (state.buttons & PAD_BUTTON_R2)
+            if (state.Buttons & PAD_BUTTON_R2)
             { printf_s("R2 button\n"); }
 
-            if (state.buttons & PAD_BUTTON_L1)
+            if (state.Buttons & PAD_BUTTON_L1)
             { printf_s("R1 button\n"); }
 
-            if (state.buttons & PAD_BUTTON_R1)
+            if (state.Buttons & PAD_BUTTON_R1)
             { printf_s("L1 button\n"); }
 
-            if (state.buttons & PAD_BUTTON_TRIANGLE)
+            if (state.Buttons & PAD_BUTTON_TRIANGLE)
             { printf_s("Å¢ button\n"); }
 
-            if (state.buttons & PAD_BUTTON_CIRCLE)
+            if (state.Buttons & PAD_BUTTON_CIRCLE)
             { printf_s("ÅZ button\n"); }
 
-            if (state.buttons & PAD_BUTTON_CROSS)
+            if (state.Buttons & PAD_BUTTON_CROSS)
             { printf_s("Å~ button\n"); }
 
-            if (state.buttons & PAD_BUTTON_SQUARE)
+            if (state.Buttons & PAD_BUTTON_SQUARE)
             { printf_s("Å† button\n"); }
 
-            if (state.buttons & PAD_BUTTON_TOUCH_PAD)
+            if (state.SpecialButtons & PAD_SPECIAL_BUTTON_TPAD)
             { printf_s("TPad button\n"); }
 
-            if (state.buttons & PAD_BUTTON_PS)
+            if (state.SpecialButtons & PAD_SPECIAL_BUTTON_PS)
             { printf_s("PS button\n"); }
 
-            printf_s("stickL %u, %u\n", state.stickL.x, state.stickL.y);
-            printf_s("stickR %u, %u\n", state.stickR.x, state.stickR.y);
+            printf_s("stick (%u, %u), (%u, %u)\n", 
+                state.StickL.X, state.StickL.Y,
+                state.StickR.X, state.StickR.Y);
 
             PadVibrationParam param = {};
             auto detect = false;
-            if (state.analogButtons.l2)
+            if (state.AnalogButtons.L2)
             {
-                param.largeMotor = state.analogButtons.l2;
+                param.LargeMotor = state.AnalogButtons.L2;
                 detect = true;
             }
-            if (state.analogButtons.r2)
+            if (state.AnalogButtons.R2)
             {
-                param.smallMotor = state.analogButtons.r2;
+                param.SmallMotor = state.AnalogButtons.R2;
                 detect = true;
             }
 
@@ -93,40 +124,40 @@ int main(int argc, char** argv)
                 PadSetVibration(pHandle, &param);
             }
 
-            if (state.buttons & PAD_BUTTON_CIRCLE)
+            if (state.Buttons & PAD_BUTTON_CIRCLE)
             {
                 PadColor color;
-                color.r = 255;
-                color.g = 0;
-                color.b = 0;
+                color.R = 255;
+                color.G = 0;
+                color.B = 0;
 
                 PadSetLightBarColor(pHandle, &color);
             }
 
-            if (state.buttons & PAD_BUTTON_TRIANGLE)
+            if (state.Buttons & PAD_BUTTON_TRIANGLE)
             {
                 PadColor color;
-                color.r = 0;
-                color.g = 255;
-                color.b = 0;
+                color.R = 0;
+                color.G = 255;
+                color.B = 0;
                 PadSetLightBarColor(pHandle, &color);
             }
 
-            if (state.buttons & PAD_BUTTON_CROSS)
+            if (state.Buttons & PAD_BUTTON_CROSS)
             {
                 PadColor color;
-                color.r = 0;
-                color.g = 0;
-                color.b = 255;
+                color.R = 0;
+                color.G = 0;
+                color.B = 255;
                 PadSetLightBarColor(pHandle, &color);
             }
 
-            if (state.buttons & PAD_BUTTON_SQUARE)
+            if (state.Buttons & PAD_BUTTON_SQUARE)
             {
                 PadColor color;
-                color.r = 255;
-                color.g = 125;
-                color.b = 125;
+                color.R = 255;
+                color.G = 125;
+                color.B = 125;
                 PadSetLightBarColor(pHandle, &color);
             }
 

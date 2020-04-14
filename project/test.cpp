@@ -8,9 +8,6 @@
 
 int main(int argc, char** argv)
 {
-    if (!PadInit())
-    { return -1; }
-
     PadHandle* pHandle = nullptr;
     if (PadOpen(&pHandle))
     {
@@ -169,8 +166,6 @@ int main(int argc, char** argv)
 
         PadClose(pHandle);
     }
-
-    PadTerm();
 
     return 0;
 }

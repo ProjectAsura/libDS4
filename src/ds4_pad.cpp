@@ -38,11 +38,6 @@ static const int   IOCTL_BTH_DISCONNECT_DEVICE = 0x41000c;
 static const float kAccelResPerG    = 8192.0f;
 static const float kGyroResInDegSec = 16.0f;
 
-//-----------------------------------------------------------------------------
-// Global Variables.
-//-----------------------------------------------------------------------------
-static GUID                     gHidGuid        = {};
-static std::atomic<bool>        gIsInit         = false;
 
 } // namespace
 
@@ -60,29 +55,6 @@ struct PadHandle
 };
 
 //-----------------------------------------------------------------------------
-//      初期化処理を行います.
-//-----------------------------------------------------------------------------
-bool PadInit()
-{
-    if (gIsInit)
-    { return true; }
-
-    HidD_GetHidGuid(&gHidGuid);
-
-    gIsInit = true;
-
-    return true;
-}
-
-//-----------------------------------------------------------------------------
-//      終了処理を行います.
-//-----------------------------------------------------------------------------
-void PadTerm()
-{
-    gIsInit = false;
-}
-
-//-----------------------------------------------------------------------------
 //      パッドを接続します.
 //-----------------------------------------------------------------------------
 bool PadOpen(PadHandle** ppHandle)
@@ -90,10 +62,10 @@ bool PadOpen(PadHandle** ppHandle)
     if (ppHandle == nullptr)
     { return false; }
 
-    if (!gIsInit)
-    { return false; }
+    GUID guid;
+    HidD_GetHidGuid(&guid);
 
-    auto info = SetupDiGetClassDevs(&gHidGuid, NULL, NULL, DIGCF_PRESENT | DIGCF_INTERFACEDEVICE);
+    auto info = SetupDiGetClassDevs(&guid, NULL, NULL, DIGCF_PRESENT | DIGCF_INTERFACEDEVICE);
     if (info == nullptr)
     { return false; }
 
@@ -113,7 +85,7 @@ bool PadOpen(PadHandle** ppHandle)
 
     for(; deviceDetected == false; index++)
     {
-        auto ret = SetupDiEnumDeviceInterfaces(info, 0, &gHidGuid, index, &devInfoData);
+        auto ret = SetupDiEnumDeviceInterfaces(info, 0, &guid, index, &devInfoData);
         if (ret == FALSE)
         { return false; }
 

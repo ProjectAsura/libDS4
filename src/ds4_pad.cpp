@@ -530,7 +530,7 @@ bool PadRead(PadState& state)
     return ret;
 }
 
-bool PadSetViburation(const PadVibrationParam& param)
+bool PadSetVibration(const PadVibrationParam& param)
 {
     PadHandle handle;
     if (!PadOpen(handle))

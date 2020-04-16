@@ -82,6 +82,9 @@ bool PadOpen(PadHandle& result)
     std::wstring        devicePath;
     std::string         macAddress;
 
+    std::vector<uint8_t> buf;
+    buf.resize(180);
+
     for(; deviceDetected == false; index++)
     {
         auto ret = SetupDiEnumDeviceInterfaces(info, 0, &guid, index, &devInfoData);
@@ -91,20 +94,16 @@ bool PadOpen(PadHandle& result)
         // サイズ取得.
         SetupDiGetDeviceInterfaceDetail(info, &devInfoData, NULL, 0, &length, NULL);
 
-        auto detailData = static_cast<PSP_DEVICE_INTERFACE_DETAIL_DATA>(malloc(length));
-        if (detailData == nullptr)
-        {
-            auto errcode = GetLastError();
-            return false;
-        }
+        if (buf.size() < length)
+        { buf.resize(length); }
+
+        auto detailData = reinterpret_cast<PSP_DEVICE_INTERFACE_DETAIL_DATA>(buf.data());
         detailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
 
         ret = SetupDiGetDeviceInterfaceDetail(info, &devInfoData, detailData, length, &required, NULL);
         if (ret == FALSE)
         {
             auto errcode = GetLastError();
-            free(detailData);
-            detailData = nullptr;
             return false;
         }
 
@@ -119,8 +118,6 @@ bool PadOpen(PadHandle& result)
 
         if (handle == nullptr)
         {
-            free(detailData);
-            detailData = nullptr;
             continue;
         }
 
@@ -128,9 +125,6 @@ bool PadOpen(PadHandle& result)
         ret = HidD_GetAttributes(handle, &attributes);
         if (ret == FALSE)
         {
-            free(detailData);
-            detailData = nullptr;
-
             CloseHandle(handle);
             handle = nullptr;
 
@@ -139,9 +133,6 @@ bool PadOpen(PadHandle& result)
 
         if (attributes.VendorID != kSonyCorp)
         {
-            free(detailData);
-            detailData = nullptr;
-
             CloseHandle(handle);
             handle = nullptr;
 
@@ -228,10 +219,9 @@ bool PadOpen(PadHandle& result)
         }
 
         devicePath = detailData->DevicePath;
-
-        free(detailData);
-        detailData = nullptr;
     }
+
+    buf.clear();
 
     // ハンドル生成.
     result.Handle       = handle;
@@ -511,7 +501,7 @@ bool PadSetLightBarColor(PadHandle* pHandle, const PadColor& param)
 }
 
 
-bool PadRead(PadState& state)
+bool PadGetState(PadState& state)
 {
     PadHandle handle;
     if (!PadOpen(handle))

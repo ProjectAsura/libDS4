@@ -12,7 +12,7 @@ int main(int argc, char** argv)
     if (PadOpen(&pHandle))
     {
         PadRawInput rawData = {};
-        while(PadRead(pHandle, &rawData))
+        while(PadRead(pHandle, rawData))
         {
             PadState state = {};
             if (!PadMap(&rawData, state))
@@ -118,7 +118,7 @@ int main(int argc, char** argv)
 
             if (detect)
             {
-                PadSetVibration(pHandle, &param);
+                PadSetVibration(pHandle, param);
             }
 
             if (state.Buttons & PAD_BUTTON_CIRCLE)
@@ -128,7 +128,7 @@ int main(int argc, char** argv)
                 color.G = 0;
                 color.B = 0;
 
-                PadSetLightBarColor(pHandle, &color);
+                PadSetLightBarColor(pHandle, color);
             }
 
             if (state.Buttons & PAD_BUTTON_TRIANGLE)
@@ -137,7 +137,7 @@ int main(int argc, char** argv)
                 color.R = 0;
                 color.G = 255;
                 color.B = 0;
-                PadSetLightBarColor(pHandle, &color);
+                PadSetLightBarColor(pHandle, color);
             }
 
             if (state.Buttons & PAD_BUTTON_CROSS)
@@ -146,16 +146,16 @@ int main(int argc, char** argv)
                 color.R = 0;
                 color.G = 0;
                 color.B = 255;
-                PadSetLightBarColor(pHandle, &color);
+                PadSetLightBarColor(pHandle, color);
             }
 
             if (state.Buttons & PAD_BUTTON_SQUARE)
             {
                 PadColor color;
                 color.R = 255;
-                color.G = 125;
-                color.B = 125;
-                PadSetLightBarColor(pHandle, &color);
+                color.G = 0;
+                color.B = 255;
+                PadSetLightBarColor(pHandle, color);
             }
 
 

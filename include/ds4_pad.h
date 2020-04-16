@@ -221,7 +221,7 @@ bool PadClose(PadHandle*& pHandle);
 //! @retval true    読み取りに成功.
 //! @retval false   読み取りに失敗.
 //-----------------------------------------------------------------------------
-bool PadRead(PadHandle* handle, PadRawInput* pResult);
+bool PadRead(PadHandle* handle, PadRawInput& result);
 
 //-----------------------------------------------------------------------------
 //! @brief      パッド生データを扱いやすい形にマッピングします.
@@ -247,11 +247,11 @@ bool PadGetState(PadHandle* pHandle, PadState& state);
 //! @brief      バイブレーションを設定します.
 //!
 //! @param[in]      handle      パッドハンドル.
-//! @param[in]      pParam      バイブレーションデータ.
+//! @param[in]      param      バイブレーションデータ.
 //! @retval true    設定に成功.
 //! @retval false   設定に失敗.
 //-----------------------------------------------------------------------------
-bool PadSetVibration(PadHandle* handle, const PadVibrationParam* pParam);
+bool PadSetVibration(PadHandle* handle, const PadVibrationParam& param);
 
 //-----------------------------------------------------------------------------
 //! @brief      ライトバーカラーを設定します.
@@ -261,7 +261,7 @@ bool PadSetVibration(PadHandle* handle, const PadVibrationParam* pParam);
 //! @retval true    設定に成功.
 //! @retval fasle   設定に失敗.
 //-----------------------------------------------------------------------------
-bool PadSetLightBarColor(PadHandle* handle, const PadColor* pParam);
+bool PadSetLightBarColor(PadHandle* handle, const PadColor& param);
 
 
 

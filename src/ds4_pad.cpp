@@ -54,14 +54,13 @@ struct PadHandle
     std::string             MacAddress;
 };
 
+
+
 //-----------------------------------------------------------------------------
 //      パッドを接続します.
 //-----------------------------------------------------------------------------
-bool PadOpen(PadHandle** ppHandle)
+bool PadOpen(PadHandle& result)
 {
-    if (ppHandle == nullptr)
-    { return false; }
-
     GUID guid;
     HidD_GetHidGuid(&guid);
 
@@ -235,14 +234,31 @@ bool PadOpen(PadHandle** ppHandle)
     }
 
     // ハンドル生成.
-    auto pad = new PadHandle;
-    pad->Handle     = handle;
-    pad->DevicePath = devicePath;
-    pad->Size       = size;
-    pad->Type       = type;
-    pad->MacAddress = macAddress;
+    result.Handle       = handle;
+    result.DevicePath   = devicePath;
+    result.Size         = size;
+    result.Type         = type;
+    result.MacAddress   = macAddress;
 
-    *ppHandle = pad;
+    return true;
+}
+
+//-----------------------------------------------------------------------------
+//      パッドを接続します.
+//-----------------------------------------------------------------------------
+bool PadOpen(PadHandle** ppHandle)
+{
+    auto padHandle = new(std::nothrow) PadHandle();
+    if (padHandle == nullptr)
+    { return false; }
+
+    if (!PadOpen(*padHandle))
+    {
+        delete padHandle;
+        padHandle = nullptr;
+    }
+
+    *ppHandle = padHandle;
 
     return true;
 }
@@ -250,12 +266,9 @@ bool PadOpen(PadHandle** ppHandle)
 //-----------------------------------------------------------------------------
 //      パッドを切断します.
 //-----------------------------------------------------------------------------
-bool PadClose(PadHandle*& pHandle)
+bool PadClose(PadHandle& padHandle)
 {
-    if (pHandle == nullptr)
-    { return false; }
-
-    if (pHandle->Type == PAD_CONNECTION_BT)
+    if (padHandle.Type == PAD_CONNECTION_BT)
     {
         // TODO: Bluetooth切断処理.
 #if 0
@@ -283,21 +296,35 @@ bool PadClose(PadHandle*& pHandle)
 #endif
     }
 
-    if (pHandle->Handle != nullptr)
+    if (padHandle.Handle != nullptr)
     {
         PadColor color = {};
         PadVibrationParam vibrate = {};
 
-        PadSetLightBarColor(pHandle, &color);
-        PadSetVibration(pHandle, &vibrate);
+        PadSetLightBarColor(&padHandle, color);
+        PadSetVibration(&padHandle, vibrate);
 
-        CloseHandle(pHandle->Handle);
-        pHandle->Handle = nullptr;
+        CloseHandle(padHandle.Handle);
+        padHandle.Handle = nullptr;
     }
 
-    // ハンドル破棄.
-    delete pHandle;
-    pHandle = nullptr;
+    return true;
+}
+
+//-----------------------------------------------------------------------------
+//      パッドを切断します.
+//-----------------------------------------------------------------------------
+bool PadClose(PadHandle*& pHandle)
+{
+    if (pHandle == nullptr)
+    { return false; }
+
+    if (PadClose(*pHandle))
+    {
+        // ハンドル破棄.
+        delete pHandle;
+        pHandle = nullptr;
+    }
 
     return true;
 }
@@ -305,16 +332,16 @@ bool PadClose(PadHandle*& pHandle)
 //-----------------------------------------------------------------------------
 //      パッド生データを読み取ります.
 //-----------------------------------------------------------------------------
-bool PadRead(PadHandle* pHandle, PadRawInput* pResult)
+bool PadRead(PadHandle* pHandle, PadRawInput& result)
 {
-    if (pHandle == nullptr || pResult == nullptr)
+    if (pHandle == nullptr)
     { return false; }
 
     if (pHandle->Handle == nullptr)
     { return false; }
 
-    auto ret = ReadFile(pHandle->Handle, pResult->Bytes, pHandle->Size, nullptr, nullptr);
-    pResult->Type = pHandle->Type;
+    auto ret = ReadFile(pHandle->Handle, result.Bytes, pHandle->Size, nullptr, nullptr);
+    result.Type = pHandle->Type;
 
     return (ret == TRUE);
 }
@@ -402,7 +429,7 @@ bool PadMap(const PadRawInput* pRawData, PadState& state)
 bool PadGetState(PadHandle* pHandle, PadState& state)
 {
     PadRawInput pResult;
-    if (!PadRead(pHandle, &pResult))
+    if (!PadRead(pHandle, pResult))
     { return false; }
 
     if (!PadMap(&pResult, state))
@@ -414,9 +441,9 @@ bool PadGetState(PadHandle* pHandle, PadState& state)
 //-----------------------------------------------------------------------------
 //      バイブレーションを設定します.
 //-----------------------------------------------------------------------------
-bool PadSetVibration(PadHandle* pHandle, const PadVibrationParam* pParam)
+bool PadSetVibration(PadHandle* pHandle, const PadVibrationParam& param)
 {
-    if (pHandle == nullptr || pParam == nullptr)
+    if (pHandle == nullptr)
     { return false; }
 
     if (pHandle->Handle == nullptr)
@@ -428,15 +455,15 @@ bool PadSetVibration(PadHandle* pHandle, const PadVibrationParam* pParam)
         bytes[0] = 0x11;
         bytes[1] = 0xb0;
         bytes[3] = 0xf1;    // enable rumble (0x01), lightbar (0x02), flash (0x04)
-        bytes[6] = pParam->LargeMotor;
-        bytes[7] = pParam->SmallMotor;
+        bytes[6] = param.LargeMotor;
+        bytes[7] = param.SmallMotor;
     }
     else
     {
         bytes[0] = 0x05;
         bytes[1] = 0xf1;    // enable rumble (0x01), lightbar (0x02), flash (0x04)
-        bytes[4] = pParam->LargeMotor;
-        bytes[5] = pParam->SmallMotor;
+        bytes[4] = param.LargeMotor;
+        bytes[5] = param.SmallMotor;
     }
 
     auto size = WriteFile(pHandle->Handle, bytes, 32, nullptr, nullptr);
@@ -449,9 +476,9 @@ bool PadSetVibration(PadHandle* pHandle, const PadVibrationParam* pParam)
 //-----------------------------------------------------------------------------
 //      ライトバーカラーを設定します.
 //-----------------------------------------------------------------------------
-bool PadSetLightBarColor(PadHandle* pHandle, const PadColor* pParam)
+bool PadSetLightBarColor(PadHandle* pHandle, const PadColor& param)
 {
-    if (pHandle == nullptr || pParam == nullptr)
+    if (pHandle == nullptr)
     { return false; }
 
     if (pHandle->Handle == nullptr)
@@ -463,17 +490,17 @@ bool PadSetLightBarColor(PadHandle* pHandle, const PadColor* pParam)
         bytes[0]  = 0x11;
         bytes[1]  = 0xb0;
         bytes[3]  = 0xf6;    // enable rumble (0x01), lightbar (0x02), flash (0x04)
-        bytes[8]  = pParam->R;
-        bytes[9]  = pParam->G;
-        bytes[10] = pParam->B;
+        bytes[8]  = param.R;
+        bytes[9]  = param.G;
+        bytes[10] = param.B;
     }
     else
     {
         bytes[0] = 0x05;
         bytes[1] = 0xf6;    // enable rumble (0x01), lightbar (0x02), flash (0x04)
-        bytes[6] = pParam->R;
-        bytes[7] = pParam->G;
-        bytes[8] = pParam->B;
+        bytes[6] = param.R;
+        bytes[7] = param.G;
+        bytes[8] = param.B;
     }
 
     auto size = WriteFile(pHandle->Handle, bytes, 32, nullptr, nullptr);
@@ -481,4 +508,48 @@ bool PadSetLightBarColor(PadHandle* pHandle, const PadColor* pParam)
     { return false; }
 
     return true;
+}
+
+
+bool PadRead(PadState& state)
+{
+    PadHandle handle;
+    if (!PadOpen(handle))
+    { return false; }
+
+    PadRawInput rawData;
+    if (!PadRead(&handle, rawData))
+    {
+        PadClose(handle);
+        return false;
+    }
+
+    auto ret = PadMap(&rawData, state);
+    PadClose(handle);
+
+    return ret;
+}
+
+bool PadSetViburation(const PadVibrationParam& param)
+{
+    PadHandle handle;
+    if (!PadOpen(handle))
+    { return false; }
+
+    auto ret = PadSetVibration(&handle, param);
+    PadClose(handle);
+
+    return ret;
+}
+
+bool PadSetLightBarColor(const PadColor& param)
+{
+    PadHandle handle;
+    if (!PadOpen(handle))
+    { return false; }
+
+    auto ret = PadSetLightBarColor(&handle, param);
+    PadClose(handle);
+
+    return ret;
 }

@@ -404,14 +404,6 @@ bool PadMap(const PadRawInput* pRawData, PadState& state)
     state.Buttons           = uint16_t(input[5] | (input[6] << 8));
     state.SpecialButtons    = input[7] & 0x3;
 
-#if 0
-    auto touch_count = 0;
-    if ((input[35] & 0x80) == 0)
-    { touch_count++; }
-
-    if ((input[39] & 0x80) == 0)
-    { touch_count++; }
-
     auto gyroX  = int16_t((input[13] << 8) | input[14]);
     auto gyroY  = int16_t((input[15] << 8) | input[16]);
     auto gyroZ  = int16_t((input[17] << 8) | input[18]);
@@ -428,15 +420,21 @@ bool PadMap(const PadRawInput* pRawData, PadState& state)
     state.Acceleration.Y = -accelY / kAccelResPerG;
     state.Acceleration.Z =  accelZ / kAccelResPerG;
 
-    state.TouchData.Count = touch_count;
-    state.TouchData.Touch[0].id = (input[35] & 0x7f);
-    state.TouchData.Touch[0].x = static_cast<uint16_t>((uint16_t(input[37] & 0xf) << 8) | input[36]);
-    state.TouchData.Touch[0].y = static_cast<uint16_t>((uint16_t(input[38] << 4)) | ((input[37] & 0xf0) >> 4));
+    auto touch_count = 0;
+    if ((input[35] & 0x80) == 0)
+    { touch_count++; }
 
-    state.TouchData.Touch[1].id = (input[39] & 0x7f);
-    state.TouchData.Touch[1].x = static_cast<uint16_t>((uint16_t(input[41] & 0xf) << 8) | input[40]);
-    state.TouchData.Touch[1].y = static_cast<uint16_t>((uint16_t(input[42] << 4)) | ((input[41] & 0xf0) >> 4));
-#endif
+    if ((input[39] & 0x80) == 0)
+    { touch_count++; }
+
+    state.TouchData.Count = touch_count;
+    state.TouchData.Touch[0].Id = (input[35] & 0x7f);
+    state.TouchData.Touch[0].X = static_cast<uint16_t>((uint16_t(input[37] & 0xf) << 8) | input[36]);
+    state.TouchData.Touch[0].Y = static_cast<uint16_t>((uint16_t(input[38] << 4)) | ((input[37] & 0xf0) >> 4));
+
+    state.TouchData.Touch[1].Id = (input[39] & 0x7f);
+    state.TouchData.Touch[1].X = static_cast<uint16_t>((uint16_t(input[41] & 0xf) << 8) | input[40]);
+    state.TouchData.Touch[1].Y = static_cast<uint16_t>((uint16_t(input[42] << 4)) | ((input[41] & 0xf0) >> 4));
 
     return true;
 }

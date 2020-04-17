@@ -94,10 +94,10 @@ enum PAD_SPECIAL_BUTTON_OFFSET
 ///////////////////////////////////////////////////////////////////////////////
 enum PAD_PLUG_OFFSET
 {
-    PAD_PLUG_BATTERY_CHARGED                = 1 << 3,   // 充電中.
-    PAD_PLUG_USB_CABLE_CONNECTED            = 1 << 4,   // USB接続.
-    PAD_PLUG_HEADPHONE_CONNECTED            = 1 << 5,   // ヘッドホン接続.
-    PAD_PLUG_HEADPHONE_JACK_MIC_CONNECTED   = 1 << 6,   // マイク接続.
+    PAD_PLUG_BATTERY_CHARGED    = 1 << 3,   // 充電中.
+    PAD_PLUG_USB                = 1 << 4,   // USB接続.
+    PAD_PLUG_AUDIO              = 1 << 5,   // ヘッドホン接続.
+    PAD_PLUG_MIC                = 1 << 6,   // マイク接続.
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -190,10 +190,10 @@ struct PadState
     PadAnalogButtons        AnalogButtons;      //!< アナログボタン.
 #if 0
     //PadQuaternion           Orientation;        //!< 向き.
-    //PadVector3              Acceleration;       //!< 加速度.
-    //PadVector3              AngularVelocity;    //!< 角速度.
-    //PadTouchData            TouchData;          //!< タッチパッドデータ.
 #endif
+    PadVector3              Acceleration;       //!< 加速度.
+    PadVector3              AngularVelocity;    //!< 角速度.
+    PadTouchData            TouchData;          //!< タッチパッドデータ.
 };
 
 ///////////////////////////////////////////////////////////////////////////////

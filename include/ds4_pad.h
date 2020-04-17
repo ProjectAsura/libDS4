@@ -202,7 +202,7 @@ struct PadState
 struct PadRawInput
 {
     PAD_CONNECTION_TYPE     Type;
-    uint8_t                 Bytes[78];
+    uint8_t                 Bytes[64];
 };
 
 //-----------------------------------------------------------------------------
@@ -275,8 +275,48 @@ bool PadSetVibration(PadHandle* handle, const PadVibrationParam& param);
 bool PadSetLightBarColor(PadHandle* handle, const PadColor& param);
 
 
+
+//-----------------------------------------------------------------------------
+//! @brief      パッドデータを取得します.
+//!
+//! @param[in]      pHandle         パッドハンドル.
+//! @param[out]     state           パッドデータの格納先.
+//! @retval true    読み取りに成功.
+//! @retval false   読み取りに失敗.
+//! @note   PadOpen()とPadClose()を内部で呼び出します.
+//-----------------------------------------------------------------------------
 bool PadGetState(PadState& state);
+
+//-----------------------------------------------------------------------------
+//! @brief      パッド生データを読み取ります.
+//!
+//! @param[in]      pHandle     パッドハンドル.
+//! @param[out]     pResult     パッド生データの格納先.
+//! @retval true    読み取りに成功.
+//! @retval false   読み取りに失敗.
+//! @note   PadOpen()とPadClose()を内部で呼び出します.
+//-----------------------------------------------------------------------------
 bool PadRead(PadRawInput& state);
+
+//-----------------------------------------------------------------------------
+//! @brief      バイブレーションを設定します.
+//!
+//! @param[in]      handle      パッドハンドル.
+//! @param[in]      param      バイブレーションデータ.
+//! @retval true    設定に成功.
+//! @retval false   設定に失敗.
+//! @note   PadOpen()とPadClose()を内部で呼び出します.
+//-----------------------------------------------------------------------------
 bool PadSetVibration(const PadVibrationParam& param);
+
+//-----------------------------------------------------------------------------
+//! @brief      ライトバーカラーを設定します.
+//!
+//! @param[in]      handle      パッドハンドル.
+//! @param[in]      pParam      ライトバーカラー.
+//! @retval true    設定に成功.
+//! @retval fasle   設定に失敗.
+//! @note   PadOpen()とPadClose()を内部で呼び出します.
+//-----------------------------------------------------------------------------
 bool PadSetLightBarColor(const PadColor& param);
 

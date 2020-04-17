@@ -55,7 +55,6 @@ struct PadHandle
 };
 
 
-
 //-----------------------------------------------------------------------------
 //      パッドを接続します.
 //-----------------------------------------------------------------------------
@@ -175,11 +174,21 @@ bool PadOpen(PadHandle& result)
             }
             else
             {
-                type = PAD_CONNECTION_BT;
+            #if 0
+                //type = PAD_CONNECTION_BT;
 
-                char buf[126];
-                if (HidD_GetSerialNumberString(handle, buf, 126) == TRUE)
-                { macAddress = buf; }
+                //char buf[126];
+                //if (HidD_GetSerialNumberString(handle, buf, 126) == TRUE)
+                //{ macAddress = buf; }
+            #else
+                // Bluetooth 非サポート.
+                HidD_FreePreparsedData(preparsedData);
+
+                CloseHandle(handle);
+                handle = nullptr;
+
+                continue;
+            #endif
             }
 
             size = capabilities.FeatureReportByteLength;
@@ -207,11 +216,21 @@ bool PadOpen(PadHandle& result)
             }
             else
             {
-                type = PAD_CONNECTION_BT;
+            #if 0
+                //type = PAD_CONNECTION_BT;
 
-                char buf[126];
-                if (HidD_GetSerialNumberString(handle, buf, 126) == TRUE)
-                { macAddress = buf; }
+                //char buf[126];
+                //if (HidD_GetSerialNumberString(handle, buf, 126) == TRUE)
+                //{ macAddress = buf; }
+            #else
+                // Bluetooth 非サポート.
+                HidD_FreePreparsedData(preparsedData);
+
+                CloseHandle(handle);
+                handle = nullptr;
+
+                continue;
+            #endif
             }
 
             size = capabilities.FeatureReportByteLength;
@@ -261,7 +280,7 @@ bool PadClose(PadHandle& padHandle)
     if (padHandle.Type == PAD_CONNECTION_BT)
     {
         // TODO: Bluetooth切断処理.
-#if 0
+    #if 0
         //BLUETOOTH_FIND_RADIO_PARAMS params;
         //params.dwSize = sizeof(BLUETOOTH_FIND_RADIO_PARAMS);
 
@@ -273,7 +292,7 @@ bool PadClose(PadHandle& padHandle)
         //BOOL ret = FALSE;
         //while(!ret && handleBT != nullptr)
         //{
-        //    ret = DeviceIoControl(handleBT, IOCTL_BTH_DISCONNECT_DEVICE, btAddress, 8, NULL, 0, &length, NULL);
+        //    ret = DeviceIoControl(handleBT, IOCTL_BTH_DISCONNECT_DEVICE, btAddress, sizeof(btAddress), NULL, 0, &length, NULL);
         //    CloseHandle(handleBT);
         //    if (!ret)
         //    {
@@ -283,7 +302,7 @@ bool PadClose(PadHandle& padHandle)
         //}
 
         //BluetoothFindRadioClose(handleSearch);
-#endif
+    #endif
     }
 
     if (padHandle.Handle != nullptr)
@@ -330,6 +349,12 @@ bool PadRead(PadHandle* pHandle, PadRawInput& result)
     if (pHandle->Handle == nullptr)
     { return false; }
 
+    if (pHandle->Type == PAD_CONNECTION_BT)
+    {
+        // Bluetooth非サポート.
+        return false;
+    }
+
     auto ret = ReadFile(pHandle->Handle, result.Bytes, pHandle->Size, nullptr, nullptr);
     result.Type = pHandle->Type;
 
@@ -362,9 +387,12 @@ bool PadMap(const PadRawInput* pRawData, PadState& state)
     }
     else if (pRawData->Type == PAD_CONNECTION_BT)
     {
-        // 78 bytes.
-        state.Type = PAD_CONNECTION_BT;
-        input = &pRawData->Bytes[2];
+        //// 547 bytes.
+        //state.Type = PAD_CONNECTION_BT;
+        //input = &pRawData->Bytes[2];
+
+        // Bluetooth 非サポート.
+        return false;
     }
 
     state.StickL.X          = input[1];
@@ -500,6 +528,9 @@ bool PadSetLightBarColor(PadHandle* pHandle, const PadColor& param)
     return true;
 }
 
+//-----------------------------------------------------------------------------
+//      パッドデータを読み取ります.
+//-----------------------------------------------------------------------------
 bool PadGetState(PadState& state)
 {
     PadHandle handle;
@@ -519,6 +550,9 @@ bool PadGetState(PadState& state)
     return ret;
 }
 
+//-----------------------------------------------------------------------------
+//      パッド生データを読み取ります.
+//-----------------------------------------------------------------------------
 bool PadRead(PadRawInput& state)
 {
     PadHandle handle;
@@ -532,6 +566,9 @@ bool PadRead(PadRawInput& state)
     return ret;
 }
 
+//-----------------------------------------------------------------------------
+//      バイブレーションを設定します.
+//-----------------------------------------------------------------------------
 bool PadSetVibration(const PadVibrationParam& param)
 {
     PadHandle handle;
@@ -544,6 +581,9 @@ bool PadSetVibration(const PadVibrationParam& param)
     return ret;
 }
 
+//-----------------------------------------------------------------------------
+//      ライトバーカラーを設定します.
+//-----------------------------------------------------------------------------
 bool PadSetLightBarColor(const PadColor& param)
 {
     PadHandle handle;

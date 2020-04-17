@@ -265,6 +265,7 @@ bool PadSetLightBarColor(PadHandle* handle, const PadColor& param);
 
 
 bool PadGetState(PadState& state);
+bool PadRead(PadRawInput& state);
 bool PadSetVibration(const PadVibrationParam& param);
 bool PadSetLightBarColor(const PadColor& param);
 

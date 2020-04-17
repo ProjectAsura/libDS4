@@ -500,7 +500,6 @@ bool PadSetLightBarColor(PadHandle* pHandle, const PadColor& param)
     return true;
 }
 
-
 bool PadGetState(PadState& state)
 {
     PadHandle handle;
@@ -517,6 +516,19 @@ bool PadGetState(PadState& state)
     auto ret = PadMap(&rawData, state);
     PadClose(handle);
 
+    return ret;
+}
+
+bool PadRead(PadRawInput& state)
+{
+    PadHandle handle;
+    if (!PadOpen(handle))
+    { return false; }
+
+    PadRawInput rawData;
+    auto ret = PadRead(&handle, rawData);
+
+    PadClose(handle);
     return ret;
 }
 

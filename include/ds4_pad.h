@@ -69,7 +69,7 @@ enum PAD_BUTTON_OFFSET
 ///////////////////////////////////////////////////////////////////////////////
 enum PAD_BUTTON_DPAD
 {
-    PAD_BUTTON_DPAD_NONE        = 0x8,
+    PAD_BUTTON_DPAD_NONE        = 0x8,  // None.
     PAD_BUTTON_DPAD_NORTHWEST   = 0x7,  // ↑←.
     PAD_BUTTON_DPAD_WEST        = 0x6,  // ←.
     PAD_BUTTON_DPAD_SOUTHWEST   = 0x5,  // ↓←.
@@ -87,6 +87,17 @@ enum PAD_SPECIAL_BUTTON_OFFSET
 {
     PAD_SPECIAL_BUTTON_PS       = 1 << 0,   // PlayStationボタン.
     PAD_SPECIAL_BUTTON_TPAD     = 1 << 1    // タッチパッド.
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// PAD_PLUG_OFFSET enum
+///////////////////////////////////////////////////////////////////////////////
+enum PAD_PLUG_OFFSET
+{
+    PAD_PLUG_BATTERY_CHARGED                = 1 << 3,   // 充電中.
+    PAD_PLUG_USB_CABLE_CONNECTED            = 1 << 4,   // USB接続.
+    PAD_PLUG_HEADPHONE_CONNECTED            = 1 << 5,   // ヘッドホン接続.
+    PAD_PLUG_HEADPHONE_JACK_MIC_CONNECTED   = 1 << 6,   // マイク接続.
 };
 
 ///////////////////////////////////////////////////////////////////////////////

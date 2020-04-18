@@ -427,26 +427,26 @@ bool PadMap(const PadRawInput* pRawData, PadState& state)
     state.Buttons           = uint16_t(input[5] | (input[6] << 8));
     state.SpecialButtons    = input[7] & 0x3;
 
-    auto gyroX  = int16_t((input[13] << 8) | input[14]);
-    auto gyroY  = int16_t((input[15] << 8) | input[16]);
-    auto gyroZ  = int16_t((input[17] << 8) | input[18]);
+    //auto gyroX  = int16_t((input[13] << 8) | input[14]);
+    //auto gyroY  = int16_t((input[15] << 8) | input[16]);
+    //auto gyroZ  = int16_t((input[17] << 8) | input[18]);
 
-    auto accelX = int16_t((input[19] << 8) | input[20]);
-    auto accelY = int16_t((input[21] << 8) | input[22]);
-    auto accelZ = int16_t((input[23] << 8) | input[24]);
+    //auto accelX = int16_t((input[19] << 8) | input[20]);
+    //auto accelY = int16_t((input[21] << 8) | input[22]);
+    //auto accelZ = int16_t((input[23] << 8) | input[24]);
 
-    state.AngularVelocity.X = -gyroX / kGyroResInDegSec;
-    state.AngularVelocity.Y =  gyroY / kGyroResInDegSec;
-    state.AngularVelocity.Z = -gyroZ / kGyroResInDegSec;
+    //state.AngularVelocity.X = -gyroX / kGyroResInDegSec;
+    //state.AngularVelocity.Y =  gyroY / kGyroResInDegSec;
+    //state.AngularVelocity.Z = -gyroZ / kGyroResInDegSec;
 
-    state.Acceleration.X = -accelX / kAccelResPerG;
-    state.Acceleration.Y = -accelY / kAccelResPerG;
-    state.Acceleration.Z =  accelZ / kAccelResPerG;
+    //state.Acceleration.X = -accelX / kAccelResPerG;
+    //state.Acceleration.Y = -accelY / kAccelResPerG;
+    //state.Acceleration.Z =  accelZ / kAccelResPerG;
 
-    state.Orientation = ToQuaternion(
-        state.AngularVelocity.X,
-        state.AngularVelocity.Y,
-        state.AngularVelocity.Z);
+    //state.Orientation = ToQuaternion(
+    //    state.AngularVelocity.X,
+    //    state.AngularVelocity.Y,
+    //    state.AngularVelocity.Z);
 
     auto touch_count = 0;
     if ((input[35] & 0x80) == 0)

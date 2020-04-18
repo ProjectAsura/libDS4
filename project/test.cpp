@@ -18,6 +18,10 @@ int main(int argc, char** argv)
             if (!PadMap(&rawData, state))
             { break; }
 
+            printf_s("stick (%3u, %3u), (%3u, %3u) \n", 
+                state.StickL.X, state.StickL.Y,
+                state.StickR.X, state.StickR.Y);
+
             if (state.Buttons & PAD_BUTTON_L3)
             { printf_s("L3 button\n"); }
 
@@ -99,9 +103,6 @@ int main(int argc, char** argv)
             if (state.SpecialButtons & PAD_SPECIAL_BUTTON_PS)
             { printf_s("PS button\n"); }
 
-            printf_s("stick (%u, %u), (%u, %u)\n", 
-                state.StickL.X, state.StickL.Y,
-                state.StickR.X, state.StickR.Y);
 
             PadVibrationParam param = {};
             auto detect = false;
@@ -156,6 +157,25 @@ int main(int argc, char** argv)
                 color.G = 0;
                 color.B = 255;
                 PadSetLightBarColor(pHandle, color);
+            }
+
+            if (state.TouchData.Count > 0)
+            {
+                if (state.TouchData.Count >= 1)
+                {
+                    printf_s("touch1 : id = %u, x = %u, y= %u\n",
+                        state.TouchData.Touch[0].Id,
+                        state.TouchData.Touch[0].X,
+                        state.TouchData.Touch[0].Y);
+                }
+                
+                if (state.TouchData.Count >= 2)
+                {
+                    printf_s("touch2 : id = %u, x = %u, y= %u\n",
+                        state.TouchData.Touch[1].Id,
+                        state.TouchData.Touch[1].X,
+                        state.TouchData.Touch[1].Y);
+                }
             }
 
 

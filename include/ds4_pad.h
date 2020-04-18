@@ -188,9 +188,9 @@ struct PadState
     uint16_t                Buttons;            //!< ボタン(下位4bitがDPad).
     uint8_t                 SpecialButtons;     //!< 特殊ボタン.
     PadAnalogButtons        AnalogButtons;      //!< アナログボタン.
-    PadQuaternion           Orientation;        //!< 向き.
-    PadVector3              Acceleration;       //!< 加速度.
-    PadVector3              AngularVelocity;    //!< 角速度.
+    //PadQuaternion           Orientation;        //!< 向き.
+    //PadVector3              Acceleration;       //!< 加速度.
+    //PadVector3              AngularVelocity;    //!< 角速度.
     PadTouchData            TouchData;          //!< タッチパッドデータ.
 };
 

@@ -54,6 +54,29 @@ struct PadHandle
     std::string             MacAddress;
 };
 
+//-----------------------------------------------------------------------------
+//      オイラー角から四元数に変換します.
+//-----------------------------------------------------------------------------
+PadQuaternion ToQuaternion(float x, float y, float z)
+{
+    auto cx = cos(x * 0.5);
+    auto cy = cos(y * 0.5);
+    auto cz = cos(z * 0.5);
+
+    auto sx = sin(x * 0.5);
+    auto sy = sin(y * 0.5);
+    auto sz = sin(z * 0.5);
+
+    // TODO : 実装確認.
+    PadQuaternion q;
+    q.W = float(cx * cy * cz + sx * sy * sz);
+    q.X = float(sx * cy * cz - cx * sy * sz);
+    q.Y = float(cx * sy * cz + sx * cy * sz);
+    q.Z = float(cx * cy * sz - sx * sy * cz);
+
+    return q;
+}
+
 
 //-----------------------------------------------------------------------------
 //      パッドを接続します.
@@ -419,6 +442,11 @@ bool PadMap(const PadRawInput* pRawData, PadState& state)
     state.Acceleration.X = -accelX / kAccelResPerG;
     state.Acceleration.Y = -accelY / kAccelResPerG;
     state.Acceleration.Z =  accelZ / kAccelResPerG;
+
+    state.Orientation = ToQuaternion(
+        state.AngularVelocity.X,
+        state.AngularVelocity.Y,
+        state.AngularVelocity.Z);
 
     auto touch_count = 0;
     if ((input[35] & 0x80) == 0)

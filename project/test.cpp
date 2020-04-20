@@ -18,9 +18,11 @@ int main(int argc, char** argv)
             if (!PadMap(&rawData, state))
             { break; }
 
-            printf_s("stick (%3u, %3u), (%3u, %3u) \n", 
+            printf_s("stick (%3u, %3u), (%3u, %3u) Gyro(%d, %d, %d), Accel(%d, %d, %d)\n", 
                 state.StickL.X, state.StickL.Y,
-                state.StickR.X, state.StickR.Y);
+                state.StickR.X, state.StickR.Y,
+                state.Gyro.X,  state.Gyro.Y,  state.Gyro.Z,
+                state.Accel.X, state.Accel.Y, state.Accel.Z);
 
             if (state.Buttons & PAD_BUTTON_L3)
             { printf_s("L3 button\n"); }

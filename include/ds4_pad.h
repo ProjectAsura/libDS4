@@ -101,27 +101,6 @@ enum PAD_PLUG_OFFSET
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// PadVector3 structure
-///////////////////////////////////////////////////////////////////////////////]
-struct PadVector3
-{
-    float   X;
-    float   Y;
-    float   Z;
-};
-
-///////////////////////////////////////////////////////////////////////////////
-// PadQuaternion structure
-///////////////////////////////////////////////////////////////////////////////
-struct PadQuaternion
-{
-    float   X;
-    float   Y;
-    float   Z;
-    float   W;
-};
-
-///////////////////////////////////////////////////////////////////////////////
 // PadAnalogStick structure
 ///////////////////////////////////////////////////////////////////////////////
 struct PadAnalogStick
@@ -137,6 +116,26 @@ struct PadAnalogButtons
 {
     uint8_t     L2;     //!< L2トリガー.
     uint8_t     R2;     //!< R2トリガー.
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// PadAngularVelocity structure
+///////////////////////////////////////////////////////////////////////////////
+struct PadAngularVelocity
+{
+    int16_t     X;
+    int16_t     Y;
+    int16_t     Z;
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// PadAccelaration structure
+///////////////////////////////////////////////////////////////////////////////
+struct PadAccelaration
+{
+    int16_t     X;      // positive : right.
+    int16_t     Y;      // positive : up.
+    int16_t     Z;      // positive : toward player.
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -188,9 +187,8 @@ struct PadState
     uint16_t                Buttons;            //!< ボタン(下位4bitがDPad).
     uint8_t                 SpecialButtons;     //!< 特殊ボタン.
     PadAnalogButtons        AnalogButtons;      //!< アナログボタン.
-    //PadQuaternion           Orientation;        //!< 向き.
-    //PadVector3              Acceleration;       //!< 加速度.
-    //PadVector3              AngularVelocity;    //!< 角速度.
+    PadAngularVelocity      Gyro;               //!< 角速度(補正無し).
+    PadAccelaration         Accel;              //!< 加速度(補正無し).
     PadTouchData            TouchData;          //!< タッチパッドデータ.
 };
 

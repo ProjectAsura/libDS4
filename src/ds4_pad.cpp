@@ -54,29 +54,6 @@ struct PadHandle
     std::string             MacAddress;
 };
 
-//-----------------------------------------------------------------------------
-//      オイラー角から四元数に変換します.
-//-----------------------------------------------------------------------------
-PadQuaternion ToQuaternion(float x, float y, float z)
-{
-    auto cx = cos(x * 0.5);
-    auto cy = cos(y * 0.5);
-    auto cz = cos(z * 0.5);
-
-    auto sx = sin(x * 0.5);
-    auto sy = sin(y * 0.5);
-    auto sz = sin(z * 0.5);
-
-    // TODO : 実装確認.
-    PadQuaternion q;
-    q.W = float(cx * cy * cz + sx * sy * sz);
-    q.X = float(sx * cy * cz - cx * sy * sz);
-    q.Y = float(cx * sy * cz + sx * cy * sz);
-    q.Z = float(cx * cy * sz - sx * sy * cz);
-
-    return q;
-}
-
 
 //-----------------------------------------------------------------------------
 //      パッドを接続します.
@@ -356,9 +333,11 @@ bool PadClose(PadHandle*& pHandle)
         // ハンドル破棄.
         delete pHandle;
         pHandle = nullptr;
+
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -427,26 +406,13 @@ bool PadMap(const PadRawInput* pRawData, PadState& state)
     state.Buttons           = uint16_t(input[5] | (input[6] << 8));
     state.SpecialButtons    = input[7] & 0x3;
 
-    //auto gyroX  = int16_t((input[13] << 8) | input[14]);
-    //auto gyroY  = int16_t((input[15] << 8) | input[16]);
-    //auto gyroZ  = int16_t((input[17] << 8) | input[18]);
+    state.Gyro.X  = (int16_t)(uint16_t(input[14] << 8) | input[13]);
+    state.Gyro.Y  = (int16_t)(uint16_t(input[16] << 8) | input[15]);
+    state.Gyro.Z  = (int16_t)(uint16_t(input[18] << 8) | input[17]);
 
-    //auto accelX = int16_t((input[19] << 8) | input[20]);
-    //auto accelY = int16_t((input[21] << 8) | input[22]);
-    //auto accelZ = int16_t((input[23] << 8) | input[24]);
-
-    //state.AngularVelocity.X = -gyroX / kGyroResInDegSec;
-    //state.AngularVelocity.Y =  gyroY / kGyroResInDegSec;
-    //state.AngularVelocity.Z = -gyroZ / kGyroResInDegSec;
-
-    //state.Acceleration.X = -accelX / kAccelResPerG;
-    //state.Acceleration.Y = -accelY / kAccelResPerG;
-    //state.Acceleration.Z =  accelZ / kAccelResPerG;
-
-    //state.Orientation = ToQuaternion(
-    //    state.AngularVelocity.X,
-    //    state.AngularVelocity.Y,
-    //    state.AngularVelocity.Z);
+    state.Accel.X = (int16_t)(uint16_t(input[20] << 8) | input[19]);
+    state.Accel.Y = (int16_t)(uint16_t(input[22] << 8) | input[21]);
+    state.Accel.Z = (int16_t)(uint16_t(input[24] << 8) | input[23]);
 
     auto touch_count = 0;
     if ((input[35] & 0x80) == 0)

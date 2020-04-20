@@ -187,6 +187,8 @@ struct PadState
     uint16_t                Buttons;            //!< ボタン(下位4bitがDPad).
     uint8_t                 SpecialButtons;     //!< 特殊ボタン.
     PadAnalogButtons        AnalogButtons;      //!< アナログボタン.
+    uint16_t                TimeStamp;          //!< タイムスタンプ.
+    uint8_t                 BatteryLevel;       //!< バッテリーレベル.
     PadAngularVelocity      Gyro;               //!< 角速度(補正無し).
     PadAccelaration         Accel;              //!< 加速度(補正無し).
     PadTouchData            TouchData;          //!< タッチパッドデータ.

@@ -405,6 +405,8 @@ bool PadMap(const PadRawInput* pRawData, PadState& state)
     state.AnalogButtons.R2  = input[9];
     state.Buttons           = uint16_t(input[5] | (input[6] << 8));
     state.SpecialButtons    = input[7] & 0x3;
+    state.TimeStamp         = uint16_t((input[11] << 8) | input[10]);
+    state.BatteryLevel      = input[12];
 
     state.Gyro.X  = (int16_t)(uint16_t(input[14] << 8) | input[13]);
     state.Gyro.Y  = (int16_t)(uint16_t(input[16] << 8) | input[15]);

@@ -82,13 +82,16 @@ bool PadOpen(PadHandle& result)
     std::string         macAddress;
 
     std::vector<uint8_t> buf;
-    buf.resize(180);
+    buf.resize(200);    // 170(CUH_ZCT1x), 182(CUH_ZCT2x).
 
     for(; deviceDetected == false; index++)
     {
         auto ret = SetupDiEnumDeviceInterfaces(info, 0, &guid, index, &devInfoData);
         if (ret == FALSE)
-        { return false; }
+        {
+            SetupDiDestroyDeviceInfoList(info);
+            return false;
+        }
 
         // サイズ取得.
         SetupDiGetDeviceInterfaceDetail(info, &devInfoData, NULL, 0, &length, NULL);
@@ -103,6 +106,7 @@ bool PadOpen(PadHandle& result)
         if (ret == FALSE)
         {
             auto errcode = GetLastError();
+            SetupDiDestroyDeviceInfoList(info);
             return false;
         }
 
@@ -241,6 +245,7 @@ bool PadOpen(PadHandle& result)
     }
 
     buf.clear();
+    SetupDiDestroyDeviceInfoList(info);
 
     // ハンドル生成.
     result.Handle       = handle;

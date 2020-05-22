@@ -9,7 +9,7 @@
 //-----------------------------------------------------------------------------
 #include <atomic>
 #include <string>
-#include <vector>
+#include <array>
 #include <ds4_pad.h>
 #include <Windows.h>
 #include <hidsdi.h>
@@ -81,8 +81,8 @@ bool PadOpen(PadHandle& result)
     std::wstring        devicePath;
     std::string         macAddress;
 
-    std::vector<uint8_t> buf;
-    buf.resize(200);    // 170(CUH_ZCT1x), 182(CUH_ZCT2x).
+    // 170(CUH_ZCT1x), 182(CUH_ZCT2x).
+    std::array<uint8_t, 184> buf;
 
     for(; deviceDetected == false; index++)
     {
@@ -96,8 +96,9 @@ bool PadOpen(PadHandle& result)
         // サイズ取得.
         SetupDiGetDeviceInterfaceDetail(info, &devInfoData, NULL, 0, &length, NULL);
 
+        // サイズが期待値以上なら処理しない.
         if (buf.size() < length)
-        { buf.resize(length); }
+        { continue; }
 
         auto detailData = reinterpret_cast<PSP_DEVICE_INTERFACE_DETAIL_DATA>(buf.data());
         detailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
@@ -244,7 +245,6 @@ bool PadOpen(PadHandle& result)
         devicePath = detailData->DevicePath;
     }
 
-    buf.clear();
     SetupDiDestroyDeviceInfoList(info);
 
     // ハンドル生成.

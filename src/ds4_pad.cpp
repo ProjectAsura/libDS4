@@ -10,6 +10,8 @@
 #include <atomic>
 #include <string>
 #include <array>
+#include <vector>
+#include <sstream>
 #include <ds4_pad.h>
 #include <Windows.h>
 #include <hidsdi.h>
@@ -54,6 +56,79 @@ struct PadHandle
     uint32_t        Type;
     std::string     MacAddress;
 };
+
+//-----------------------------------------------------------------------------
+//      マルチバイト文字列に変換します.
+//-----------------------------------------------------------------------------
+std::string ToStringA( const std::wstring& value )
+{
+    auto length = WideCharToMultiByte(CP_ACP, 0, value.c_str(), int(value.size() + 1), nullptr, 0, nullptr, nullptr); 
+    auto buffer = new char[length];
+ 
+    WideCharToMultiByte(CP_ACP, 0, value.c_str(), int(value.size() + 1), buffer, length, nullptr, nullptr);
+
+    std::string result(buffer);
+    delete[] buffer;
+
+    return result;
+}
+
+//-----------------------------------------------------------------------------
+//      指定文字で文字列を分割します.
+//-----------------------------------------------------------------------------
+std::vector<std::string> Split(const std::string& input, char delimiter)
+{
+    std::istringstream stream(input);
+
+    std::string field;
+    std::vector<std::string> result;
+    while (std::getline(stream, field, delimiter))
+    { result.push_back(field); }
+    return result;
+}
+
+//-----------------------------------------------------------------------------
+//      文字列を置換します.
+//-----------------------------------------------------------------------------
+std::string Replace
+(
+    const std::string&  input,
+    std::string         pattern,
+    std::string         replace
+)
+{
+    std::string result = input;
+    auto pos = result.find( pattern );
+
+    while( pos != std::string::npos )
+    {
+        result.replace( pos, pattern.length(), replace );
+        pos = result.find( pattern, pos + replace.length() );
+    }
+
+    return result;
+}
+
+//-----------------------------------------------------------------------------
+//      MACアドレスを取得します.
+//-----------------------------------------------------------------------------
+std::string GetMacAddress(const std::wstring& value)
+{
+    auto temp = ToStringA(value);
+    auto idx = temp.find("{");
+    if (idx == std::string::npos)
+    { return ""; }
+
+    temp = temp.substr(idx - 15, 14);
+    auto lst = Split(temp, '&');
+    if (lst.size() != 3)
+    { return ""; }
+
+    lst[2] = Replace(lst[2], "0", "");
+    if (lst[2] == "")
+    { lst[2] = "0"; }
+    return lst[0] + lst[1] + lst[2];
+}
 
 
 //-----------------------------------------------------------------------------
@@ -155,6 +230,7 @@ bool PadOpen(PadHandle& result)
             HIDP_CAPS capabilities;
             HidP_GetCaps(preparsedData, &capabilities);
 
+            macAddress = GetMacAddress(detailData->DevicePath);
             size = capabilities.FeatureReportByteLength;
 
             HidD_FreePreparsedData(preparsedData);
@@ -177,6 +253,8 @@ bool PadOpen(PadHandle& result)
                 buf[0] = 18;
                 if (HidD_GetFeature(handle, buf, 16) == TRUE)
                 { macAddress = buf; }
+                else
+                { macAddress = GetMacAddress(detailData->DevicePath); }
             }
             else
             {
@@ -219,6 +297,8 @@ bool PadOpen(PadHandle& result)
                 buf[0] = 18;
                 if (HidD_GetFeature(handle, buf, 16) == TRUE)
                 { macAddress = buf; }
+                else
+                { macAddress = GetMacAddress(detailData->DevicePath); }
             }
             else
             {
@@ -256,12 +336,8 @@ bool PadOpen(PadHandle& result)
             {
                 type = PAD_CONNECTION_USB | PAD_CONNECTION_DUAL_SENSE;
 
-            #if 0
-                //char buf[16];
-                //buf[0] = 18;
-                //if (HidD_GetFeature(handle, buf, 16) == TRUE)
-                //{ macAddress = buf; }
-            #endif
+                // デバイス名からMACアドレスを取得.
+                macAddress = GetMacAddress(detailData->DevicePath);
             }
             else
             {

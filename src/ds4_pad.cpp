@@ -468,7 +468,7 @@ bool PadRead(PadHandle* pHandle, PadRawInput& result)
     if (pHandle->Handle == nullptr)
     { return false; }
 
-    if (pHandle->Type == PAD_CONNECTION_BT)
+    if (!!(pHandle->Type & PAD_CONNECTION_BT))
     {
         // Bluetooth非サポート.
         return false;
@@ -487,22 +487,22 @@ bool PadMapDualShock4(const PadRawInput* pRawData, PadState& state)
 {
     const uint8_t* input = &pRawData->Bytes[0];
 
-    if (pRawData->Type == PAD_CONNECTION_NONE)
+    if (!!(pRawData->Type & PAD_CONNECTION_NONE))
     { 
         memset(&state, 0, sizeof(state));
         return false;
     }
-    else if (pRawData->Type == PAD_CONNECTION_USB)
+    else if (!!(pRawData->Type & PAD_CONNECTION_USB))
     {
         // 64 bytes.
         state.Type = PAD_CONNECTION_USB;
     }
-    else if (pRawData->Type == PAD_CONNECTION_WIRELESS)
+    else if (!!(pRawData->Type & PAD_CONNECTION_WIRELESS))
     {
         // 64 bytes.
         state.Type = PAD_CONNECTION_WIRELESS;
     }
-    else if (pRawData->Type == PAD_CONNECTION_BT)
+    else if (!!(pRawData->Type & PAD_CONNECTION_BT))
     {
         //// 547 bytes.
         //state.Type = PAD_CONNECTION_BT;
@@ -557,17 +557,17 @@ bool PadMapDualSense(const PadRawInput* pRawData, PadState& state)
 {
     const uint8_t* input = &pRawData->Bytes[0];
 
-    if (pRawData->Type == PAD_CONNECTION_NONE)
+    if (!!(pRawData->Type & PAD_CONNECTION_NONE))
     { 
         memset(&state, 0, sizeof(state));
         return false;
     }
-    else if (pRawData->Type == PAD_CONNECTION_USB)
+    else if (!!(pRawData->Type & PAD_CONNECTION_USB))
     {
         // 64 bytes.
         state.Type = PAD_CONNECTION_USB;
     }
-    else if (pRawData->Type == PAD_CONNECTION_WIRELESS)
+    else if (!!(pRawData->Type == PAD_CONNECTION_WIRELESS))
     {
         // 64 bytes.
         state.Type = PAD_CONNECTION_WIRELESS;
@@ -657,8 +657,14 @@ bool PadSetVibration(PadHandle* pHandle, const PadVibrationParam& param)
     if (pHandle->Handle == nullptr)
     { return false; }
 
+    if (!!(pHandle->Type & PAD_CONNECTION_DUAL_SENSE))
+    {
+        // TODO : Implementation.
+        return false;
+    }
+
     uint8_t bytes[32] = {};
-    if (pHandle->Type == PAD_CONNECTION_BT)
+    if (!!(pHandle->Type & PAD_CONNECTION_BT))
     {
         bytes[0] = 0x11;
         bytes[1] = 0xb0;
@@ -692,8 +698,14 @@ bool PadSetLightBarColor(PadHandle* pHandle, const PadColor& param)
     if (pHandle->Handle == nullptr)
     { return false; }
 
+    if (!!(pHandle->Type & PAD_CONNECTION_DUAL_SENSE))
+    {
+        // TODO : Implementation.
+        return false;
+    }
+
     uint8_t bytes[32] = {};
-    if (pHandle->Type == PAD_CONNECTION_BT)
+    if (!!(pHandle->Type & PAD_CONNECTION_BT))
     {
         bytes[0]  = 0x11;
         bytes[1]  = 0xb0;

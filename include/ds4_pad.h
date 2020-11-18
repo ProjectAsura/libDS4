@@ -39,10 +39,11 @@ static const uint8_t kPadMaxTouchCount = 2;
 ///////////////////////////////////////////////////////////////////////////////
 enum PAD_CONNECTION_TYPE
 {
-    PAD_CONNECTION_NONE,        //!< None.
-    PAD_CONNECTION_USB,         //!< USB Wire.
-    PAD_CONNECTION_BT,          //!< Bluetooth.
-    PAD_CONNECTION_WIRELESS     //!< USB Wireless Adaptor.
+    PAD_CONNECTION_NONE         = 0,    //!< None.
+    PAD_CONNECTION_USB          = 1,    //!< USB Wire.
+    PAD_CONNECTION_BT           = 2,    //!< Bluetooth.
+    PAD_CONNECTION_WIRELESS     = 3,    //!< USB Wireless Adaptor.
+    PAD_CONNECTION_DUAL_SENSE   = 0x10, //!< DualSense Controller.
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -86,7 +87,8 @@ enum PAD_BUTTON_DPAD
 enum PAD_SPECIAL_BUTTON_OFFSET
 {
     PAD_SPECIAL_BUTTON_PS       = 1 << 0,   // PlayStationボタン.
-    PAD_SPECIAL_BUTTON_TPAD     = 1 << 1    // タッチパッド.
+    PAD_SPECIAL_BUTTON_TPAD     = 1 << 1,   // タッチパッド.
+    PAD_SPECIAL_BUTTON_MUTE     = 1 << 2,   // マイクミュートボタン(DualSenseのみ).
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -199,8 +201,8 @@ struct PadState
 ///////////////////////////////////////////////////////////////////////////////
 struct PadRawInput
 {
-    PAD_CONNECTION_TYPE     Type;
-    uint8_t                 Bytes[64];
+    uint32_t    Type;
+    uint8_t     Bytes[64];
 };
 
 //-----------------------------------------------------------------------------

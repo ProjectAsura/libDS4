@@ -30,6 +30,7 @@ static const uint16_t kSonyCorp = 0x054c;
 static const uint16_t kDualShockWirelessAdaptor = 0x0ba0;
 static const uint16_t kDualShock4_CUH_ZCT1x     = 0x05c4;  // CUH-ZCT1x
 static const uint16_t kDualShock4_CUH_ZCT2x     = 0x09cc;  // CUH-ZCT2x
+static const uint16_t kDualSense_CFI_ZCT1J      = 0x0ce6;
 
 // For Bluetooth.
 static const char  kBlankSerial[] = "00:00:00:00:00:00";
@@ -47,11 +48,11 @@ static const float kGyroResInDegSec = 16.0f;
 ///////////////////////////////////////////////////////////////////////////////
 struct PadHandle
 {
-    HANDLE                  Handle;
-    std::wstring            DevicePath;
-    uint32_t                Size;
-    PAD_CONNECTION_TYPE     Type;
-    std::string             MacAddress;
+    HANDLE          Handle;
+    std::wstring    DevicePath;
+    uint32_t        Size;
+    uint32_t        Type;
+    std::string     MacAddress;
 };
 
 
@@ -75,13 +76,13 @@ bool PadOpen(PadHandle& result)
     auto  index     = 0u;
     auto  deviceDetected = false;
 
-    PAD_CONNECTION_TYPE type;
-    DWORD               size = 0;
-    HANDLE              handle = nullptr;
-    std::wstring        devicePath;
-    std::string         macAddress;
+    uint32_t        type = 0;
+    DWORD           size = 0;
+    HANDLE          handle = nullptr;
+    std::wstring    devicePath;
+    std::string     macAddress;
 
-    // 170(CUH_ZCT1x), 182(CUH_ZCT2x).
+    // 170(CUH_ZCT1x), 182(CUH_ZCT2x), 180(CFI_ZCT1J).
     std::array<uint8_t, 184> buf;
 
     for(; deviceDetected == false; index++)
@@ -241,6 +242,41 @@ bool PadOpen(PadHandle& result)
             size = capabilities.FeatureReportByteLength;
             HidD_FreePreparsedData(preparsedData);
         }
+        else if (attributes.ProductID == kDualSense_CFI_ZCT1J)
+        {
+            deviceDetected = true;
+
+            PHIDP_PREPARSED_DATA preparsedData;
+            HidD_GetPreparsedData(handle, &preparsedData);
+
+            HIDP_CAPS capabilities;
+            HidP_GetCaps(preparsedData, &capabilities);
+
+            if (capabilities.InputReportByteLength == 64)
+            {
+                type = PAD_CONNECTION_USB | PAD_CONNECTION_DUAL_SENSE;
+
+            #if 0
+                //char buf[16];
+                //buf[0] = 18;
+                //if (HidD_GetFeature(handle, buf, 16) == TRUE)
+                //{ macAddress = buf; }
+            #endif
+            }
+            else
+            {
+                // Bluetooth 非サポート.
+                HidD_FreePreparsedData(preparsedData);
+
+                CloseHandle(handle);
+                handle = nullptr;
+
+                continue;
+            }
+
+            size = capabilities.FeatureReportByteLength;
+            HidD_FreePreparsedData(preparsedData);
+        }
 
         devicePath = detailData->DevicePath;
     }
@@ -369,18 +405,16 @@ bool PadRead(PadHandle* pHandle, PadRawInput& result)
 }
 
 //-----------------------------------------------------------------------------
-//      パッドデータを扱いやすい形にマッピングします.
+//      Dual Shock4パッドデータを扱いやすい形にマッピングします.
 //-----------------------------------------------------------------------------
-bool PadMap(const PadRawInput* pRawData, PadState& state)
+bool PadMapDualShock4(const PadRawInput* pRawData, PadState& state)
 {
-    if (pRawData == nullptr)
-    { return false; }
-
     const uint8_t* input = &pRawData->Bytes[0];
 
     if (pRawData->Type == PAD_CONNECTION_NONE)
     { 
         memset(&state, 0, sizeof(state));
+        return false;
     }
     else if (pRawData->Type == PAD_CONNECTION_USB)
     {
@@ -438,6 +472,87 @@ bool PadMap(const PadRawInput* pRawData, PadState& state)
     state.TouchData.Touch[1].Y = static_cast<uint16_t>((uint16_t(input[42] << 4)) | ((input[41] & 0xf0) >> 4));
 
     return true;
+}
+
+//-----------------------------------------------------------------------------
+//      Dual Senseパッドデータを扱いやすい形にマッピングします.
+//-----------------------------------------------------------------------------
+bool PadMapDualSense(const PadRawInput* pRawData, PadState& state)
+{
+    const uint8_t* input = &pRawData->Bytes[0];
+
+    if (pRawData->Type == PAD_CONNECTION_NONE)
+    { 
+        memset(&state, 0, sizeof(state));
+        return false;
+    }
+    else if (pRawData->Type == PAD_CONNECTION_USB)
+    {
+        // 64 bytes.
+        state.Type = PAD_CONNECTION_USB;
+    }
+    else if (pRawData->Type == PAD_CONNECTION_WIRELESS)
+    {
+        // 64 bytes.
+        state.Type = PAD_CONNECTION_WIRELESS;
+    }
+    else if (pRawData->Type == PAD_CONNECTION_BT)
+    {
+        // Bluetooth 非サポート.
+        return false;
+    }
+
+    /* Memo :
+    * input[7] →　タイマーカウンターっぽい挙動.
+    * input[11] →　常にゼロ.
+    * input[12]~[15]　→　タイムスタンプっぽい.
+    * input[16]~　→　ジャイロか加速度.
+    * input[30]~[32]　→ タイムスタンプっぽい.
+    */
+
+    state.StickL.X          = input[1];
+    state.StickL.Y          = input[2];
+    state.StickR.X          = input[3];
+    state.StickR.Y          = input[4];
+    state.AnalogButtons.L2  = input[5];
+    state.AnalogButtons.R2  = input[6];
+    state.Buttons           = uint16_t(input[8] | (input[9] << 8));
+    state.SpecialButtons    = input[10] & 0xf;
+    state.TimeStamp         = uint16_t((input[13] << 8) | input[12]);
+
+    // TODO : ジャイロ, 加速度対応.
+
+    auto touch_count = 0;
+    if ((input[33] & 0x80) == 0)
+    { touch_count++; }
+
+    if ((input[37] & 0x80) == 0)
+    { touch_count++; }
+
+    state.TouchData.Count       = touch_count;
+    state.TouchData.Touch[0].Id = (input[33] & 0x7f);
+    state.TouchData.Touch[0].X  = static_cast<uint16_t>((uint16_t(input[35] & 0xf) << 8) | input[34]);
+    state.TouchData.Touch[0].Y  = static_cast<uint16_t>((uint16_t(input[36] << 4)) | ((input[35] & 0xf0) >> 4));
+
+    state.TouchData.Touch[1].Id = (input[37] & 0x7f);
+    state.TouchData.Touch[1].X  = static_cast<uint16_t>((uint16_t(input[39] & 0xf) << 8) | input[38]);
+    state.TouchData.Touch[1].Y  = static_cast<uint16_t>((uint16_t(input[40] << 4)) | ((input[39] & 0xf0) >> 4));
+
+    return true;
+}
+
+//-----------------------------------------------------------------------------
+//      パッドデータを扱いやすい形にマッピングします.
+//-----------------------------------------------------------------------------
+bool PadMap(const PadRawInput* pRawData, PadState& state)
+{
+    if (pRawData == nullptr)
+    { return false; }
+
+    if (!!(pRawData->Type & PAD_CONNECTION_DUAL_SENSE))
+    { return PadMapDualSense(pRawData, state); }
+
+    return PadMapDualShock4(pRawData, state);
 }
 
 //-----------------------------------------------------------------------------

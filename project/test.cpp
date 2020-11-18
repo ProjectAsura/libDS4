@@ -23,6 +23,15 @@ int main(int argc, char** argv)
         PadRawInput rawData = {};
         while(PadRead(pHandle, rawData))
         {
+            //for(auto i=0; i<64; ++i)
+            //{
+            //    printf("0x%02x ", rawData.Bytes[i]);
+            //    if ((i + 1) % 10 == 0)
+            //    { printf(" "); }
+            //}
+            //printf("\n");
+            //printf("0x%02x \n", rawData.Bytes[8]);
+
             PadState state = {};
             if (!PadMap(&rawData, state))
             { break; }
@@ -114,6 +123,8 @@ int main(int argc, char** argv)
             if (state.SpecialButtons & PAD_SPECIAL_BUTTON_PS)
             { printf_s("PS button\n"); }
 
+            if (state.SpecialButtons & PAD_SPECIAL_BUTTON_MUTE)
+            { printf_s("Mute Button\n"); }
 
             PadVibrationParam param = {};
             auto detect = false;

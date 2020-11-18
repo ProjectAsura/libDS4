@@ -289,6 +289,8 @@ bool PadOpen(PadHandle& result)
             HIDP_CAPS capabilities;
             HidP_GetCaps(preparsedData, &capabilities);
 
+            // Outputは32
+
             if (capabilities.InputReportByteLength == 64)
             {
                 type = PAD_CONNECTION_USB;
@@ -331,6 +333,8 @@ bool PadOpen(PadHandle& result)
 
             HIDP_CAPS capabilities;
             HidP_GetCaps(preparsedData, &capabilities);
+
+            // Outputは48
 
             if (capabilities.InputReportByteLength == 64)
             {
@@ -596,7 +600,14 @@ bool PadMapDualSense(const PadRawInput* pRawData, PadState& state)
     state.SpecialButtons    = input[10] & 0xf;
     state.TimeStamp         = uint16_t((input[13] << 8) | input[12]);
 
-    // TODO : ジャイロ, 加速度対応.
+    // ジャイロ, 加速度は暫定対応.
+    state.Gyro.X  = (int16_t)(uint16_t(input[17] << 8) | input[16]);
+    state.Gyro.Y  = (int16_t)(uint16_t(input[19] << 8) | input[18]);
+    state.Gyro.Z  = (int16_t)(uint16_t(input[21] << 8) | input[20]);
+
+    state.Accel.X = (int16_t)(uint16_t(input[23] << 8) | input[22]);
+    state.Accel.Y = (int16_t)(uint16_t(input[25] << 8) | input[24]);
+    state.Accel.Z = (int16_t)(uint16_t(input[27] << 8) | input[26]);
 
     auto touch_count = 0;
     if ((input[33] & 0x80) == 0)

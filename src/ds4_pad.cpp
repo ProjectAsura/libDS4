@@ -601,6 +601,7 @@ bool PadMapDualSense(const PadRawInput* pRawData, PadState& state)
     state.TimeStamp         = uint16_t((input[13] << 8) | input[12]);
 
     // ƒWƒƒƒCƒ, ‰Á‘¬“x‚ÍŽb’è‘Î‰ž.
+    // TODO : Gyro, Accelaration Implementation.
     state.Gyro.X  = (int16_t)(uint16_t(input[17] << 8) | input[16]);
     state.Gyro.Y  = (int16_t)(uint16_t(input[19] << 8) | input[18]);
     state.Gyro.Z  = (int16_t)(uint16_t(input[21] << 8) | input[20]);

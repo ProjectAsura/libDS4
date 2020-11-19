@@ -578,6 +578,9 @@ bool PadMapDualSense(const PadRawInput* pRawData, PadState& state)
     }
     else if (pRawData->Type == PAD_CONNECTION_BT)
     {
+        //state.Type = PAD_CONNECTION_BT;
+        //input = &pRawData->Bytes[2];
+
         // Bluetooth 非サポート.
         return false;
     }
@@ -610,14 +613,7 @@ bool PadMapDualSense(const PadRawInput* pRawData, PadState& state)
     state.Accel.Y = (int16_t)(uint16_t(input[25] << 8) | input[24]);
     state.Accel.Z = (int16_t)(uint16_t(input[27] << 8) | input[26]);
 
-    auto touch_count = 0;
-    if ((input[33] & 0x80) == 0)
-    { touch_count++; }
-
-    if ((input[37] & 0x80) == 0)
-    { touch_count++; }
-
-    state.TouchData.Count       = touch_count;
+    state.TouchData.Count       = input[41];
     state.TouchData.Touch[0].Id = (input[33] & 0x7f);
     state.TouchData.Touch[0].X  = static_cast<uint16_t>((uint16_t(input[35] & 0xf) << 8) | input[34]);
     state.TouchData.Touch[0].Y  = static_cast<uint16_t>((uint16_t(input[36] << 4)) | ((input[35] & 0xf0) >> 4));
@@ -659,22 +655,10 @@ bool PadGetState(PadHandle* pHandle, PadState& state)
 }
 
 //-----------------------------------------------------------------------------
-//      バイブレーションを設定します.
+//      DualShock4にバイブレーションデータを設定します.
 //-----------------------------------------------------------------------------
-bool PadSetVibration(PadHandle* pHandle, const PadVibrationParam& param)
+bool PadSetVibrationDualShock4(PadHandle* pHandle, const PadVibrationParam& param)
 {
-    if (pHandle == nullptr)
-    { return false; }
-
-    if (pHandle->Handle == nullptr)
-    { return false; }
-
-    if (!!(pHandle->Type & PAD_CONNECTION_DUAL_SENSE))
-    {
-        // TODO : Implementation.
-        return false;
-    }
-
     uint8_t bytes[32] = {};
     if (!!(pHandle->Type & PAD_CONNECTION_BT))
     {
@@ -700,9 +684,37 @@ bool PadSetVibration(PadHandle* pHandle, const PadVibrationParam& param)
 }
 
 //-----------------------------------------------------------------------------
-//      ライトバーカラーを設定します.
+//      DualSenseにバイブレーションデータを設定します.
 //-----------------------------------------------------------------------------
-bool PadSetLightBarColor(PadHandle* pHandle, const PadColor& param)
+bool PadSetVibrationDualSense(PadHandle* pHandle, const PadVibrationParam& param)
+{
+    uint8_t bytes[48] = {};
+    if (!!(pHandle->Type & PAD_CONNECTION_BT))
+    {
+        return false;
+    }
+    else
+    {
+        // 制御フラグ = 0x01 | 0x04 | 0x08 | 0x10 | 0x20 | 0x80
+        bytes[0] = 0x2;
+        bytes[1] = 0xff;
+        bytes[2] = 0x1; // control flags.
+        bytes[3] = param.LargeMotor;
+        bytes[4] = param.SmallMotor;
+        bytes[9] = 0x0; // mic
+    }
+
+    auto size = WriteFile(pHandle->Handle, bytes, 48, nullptr, nullptr);
+    if (size != 48)
+    { return false; }
+
+    return true;
+}
+
+//-----------------------------------------------------------------------------
+//      バイブレーションを設定します.
+//-----------------------------------------------------------------------------
+bool PadSetVibration(PadHandle* pHandle, const PadVibrationParam& param)
 {
     if (pHandle == nullptr)
     { return false; }
@@ -711,11 +723,16 @@ bool PadSetLightBarColor(PadHandle* pHandle, const PadColor& param)
     { return false; }
 
     if (!!(pHandle->Type & PAD_CONNECTION_DUAL_SENSE))
-    {
-        // TODO : Implementation.
-        return false;
-    }
+    { return PadSetVibrationDualSense(pHandle, param); }
 
+    return PadSetVibrationDualShock4(pHandle, param); 
+}
+
+//-----------------------------------------------------------------------------
+//      DualShock4にライトバーカラーを設定します.
+//-----------------------------------------------------------------------------
+bool PadSetLightBarColorDualShock4(PadHandle* pHandle, const PadColor& param)
+{
     uint8_t bytes[32] = {};
     if (!!(pHandle->Type & PAD_CONNECTION_BT))
     {
@@ -740,6 +757,54 @@ bool PadSetLightBarColor(PadHandle* pHandle, const PadColor& param)
     { return false; }
 
     return true;
+}
+
+//-----------------------------------------------------------------------------
+//      DualSenseにライトバーカラーを設定します.
+//-----------------------------------------------------------------------------
+bool PadSetLightBarColorDualSense(PadHandle* pHandle, const PadColor& param)
+{
+    uint8_t bytes[48] = {};
+    if (!!(pHandle->Type & PAD_CONNECTION_BT))
+    {
+        return false;
+    }
+    else
+    {
+        // 制御フラグ = 0x01 | 0x04 | 0x08 | 0x10 | 0x20 | 0x80
+        bytes[0] = 0x2;
+        bytes[1] = 0xff;
+        bytes[2] = 0x2 | 0x4; // control flags.
+        bytes[3] = 0;
+        bytes[4] = 0;
+        bytes[9] = 0x0; // mic
+        bytes[45] = param.R;
+        bytes[46] = param.G;
+        bytes[47] = param.B;
+    }
+
+    auto size = WriteFile(pHandle->Handle, bytes, 48, nullptr, nullptr);
+    if (size != 48)
+    { return false; }
+
+    return true;
+}
+
+//-----------------------------------------------------------------------------
+//      ライトバーカラーを設定します.
+//-----------------------------------------------------------------------------
+bool PadSetLightBarColor(PadHandle* pHandle, const PadColor& param)
+{
+    if (pHandle == nullptr)
+    { return false; }
+
+    if (pHandle->Handle == nullptr)
+    { return false; }
+
+    if (!!(pHandle->Type & PAD_CONNECTION_DUAL_SENSE))
+    { return PadSetLightBarColorDualSense(pHandle, param); }
+
+    return PadSetLightBarColorDualShock4(pHandle, param);
 }
 
 //-----------------------------------------------------------------------------

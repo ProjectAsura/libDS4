@@ -832,7 +832,7 @@ bool PadGetState(PadState& state)
 //-----------------------------------------------------------------------------
 //      パッド生データを読み取ります.
 //-----------------------------------------------------------------------------
-bool PadRead(PadRawInput& state)
+bool PadGetRawInput(PadRawInput& state)
 {
     PadHandle handle;
     if (!PadOpen(handle))

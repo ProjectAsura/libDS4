@@ -296,7 +296,7 @@ bool PadGetState(PadState& state);
 //! @retval false   読み取りに失敗.
 //! @note   PadOpen()とPadClose()を内部で呼び出します.
 //-----------------------------------------------------------------------------
-bool PadRead(PadRawInput& state);
+bool PadGetRawInput(PadRawInput& state);
 
 //-----------------------------------------------------------------------------
 //! @brief      バイブレーションを設定します.
